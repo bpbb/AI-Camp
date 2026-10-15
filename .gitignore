@@ -1,12 +1,14 @@
+# Covers both solution/ and student/ (** = in any folder).
+
 # PlatformIO
-firmware/.pio/
-firmware/.vscode/
+**/firmware/.pio/
+**/firmware/.vscode/
 .piolibdeps/
 
 # ROS 2 / colcon
-ros2_ws/build/
-ros2_ws/install/
-ros2_ws/log/
+**/ros2_ws/build/
+**/ros2_ws/install/
+**/ros2_ws/log/
 
 # Python
 __pycache__/

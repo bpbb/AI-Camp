@@ -1,0 +1,7 @@
+{
+  "recommendations": [
+    "platformio.platformio-ide",
+    "ms-iot.vscode-ros",
+    "ms-python.python"
+  ]
+}
