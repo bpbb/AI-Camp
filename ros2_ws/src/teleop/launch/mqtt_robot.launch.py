@@ -4,7 +4,7 @@ Appendix -- drive the MQTT-firmware robot from ROS 2.
 Not part of the lessons; see docs/appendix-mqtt-robot.md. Starts the
 keyboard node and the /cmd_vel -> MQTT bridge together:
 
-    ros2 launch teleop mqtt_robot.launch.py host:=192.168.1.100
+    ros2 launch teleop mqtt_robot.launch.py
 
 The keyboard node needs a real terminal to read keys from, which is
 why it is launched with output on screen and its own prefix.
@@ -20,7 +20,7 @@ def generate_launch_description():
     robot_id = LaunchConfiguration('robot_id')
 
     return LaunchDescription([
-        DeclareLaunchArgument('host', default_value='192.168.1.100',
+        DeclareLaunchArgument('host', default_value='localhost',
                               description='MQTT broker address'),
         DeclareLaunchArgument('robot_id', default_value='robot1',
                               description='which robot to drive'),

@@ -79,6 +79,11 @@ echo "source /opt/ros/jazzy/setup.bash" >> ~/.bashrc
 echo "source ~/AI-Camp/ros2_ws/install/setup.bash" >> ~/.bashrc
 ```
 
+Use `humble` instead of `jazzy` on 22.04. The lessons assume the
+project is at `~/AI-Camp`; if yours is somewhere else (for example
+`~/Documents/AI-Camp`), use that path instead, here and in every later
+lesson.
+
 New terminals now do it for you. (`>>` adds a line to the end of a
 file. `>` would *replace* the whole file -- be careful with that one.)
 

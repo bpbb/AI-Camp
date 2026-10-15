@@ -97,8 +97,54 @@ the failed build is cached otherwise.
 ## WiFi never connects
 
 - SSID and password are case sensitive.
+- `config.h` still says `MyNetwork` / `changeme`? Put your real WiFi in
+  and upload again.
 - The ESP32 cannot see 5 GHz networks. It must be a 2.4 GHz one.
+- Open guest WiFi with a login page won't work, and neither will
+  networks that ask for a username *and* password (WPA2-Enterprise).
 - Phone hotspots often work when school WiFi doesn't.
+
+## Only one wheel moves, with no error
+
+The pins in `firmware/include/motor.h` don't match your wiring. Compare
+them with the table in [03-hardware.md](03-hardware.md) and fix
+whichever is wrong, then upload the motor test again.
+
+## Both wheels run backwards
+
+Swap `L_IN1`/`L_IN2` and `R_IN1`/`R_IN2` in `motor.h` and upload, or
+swap each motor's two wires at the driver.
+
+## `mosquitto_sub: command not found`
+
+The broker isn't installed. Use apt, not snap:
+
+```bash
+sudo apt install mosquitto mosquitto-clients
+```
+
+Then do the next section too.
+
+## MQTT: the gateway dies straight away
+
+`[ERROR] [mqtt_teleop-1]: process has died ... exit code 1` means it
+couldn't reach the broker. Usually the broker is only listening to the
+computer itself:
+
+```bash
+ss -ltn | grep 1883      # 127.0.0.1:1883 only = the problem
+```
+
+Let other devices in:
+
+```bash
+echo -e "listener 1883\nallow_anonymous true" | sudo tee /etc/mosquitto/conf.d/workshop.conf
+sudo systemctl restart mosquitto
+sudo systemctl enable mosquitto
+```
+
+Now `ss` should show `0.0.0.0:1883`. If you passed `host:=...`, drop
+it -- the default (`localhost`) is right when the broker is on this PC.
 
 ## MQTT: `rc=-2`
 
@@ -108,7 +154,7 @@ The broker address is wrong or unreachable.
   Check with `hostname -I`.
 - Is the broker listening to the network, not just itself?
   ```bash
-  sudo ss -tlnp | grep 1883     # want 0.0.0.0:1883, not 127.0.0.1:1883
+  ss -ltn | grep 1883          # want 0.0.0.0:1883, not 127.0.0.1:1883
   ```
   `scripts/setup_pc.sh` fixes this.
 - From the robot's network, can you reach the computer at all? `ping` it.
@@ -124,21 +170,31 @@ The broker address is wrong or unreachable.
   default 60, even a full-speed request will only buzz. Raise it until
   the robot moves, then stop -- too high and slow speeds vanish.
 
+## The gateway prints the command but the robot does nothing
+
+The MQTT side works; the problem is between the computer and the robot.
+
+- Is the robot running the **micro-ROS** firmware? The motor test
+  ignores every command. Upload `microros`.
+- Is the agent running (`./scripts/start_agent.sh`)?
+- Does `ros2 node list` show `/esp32_robot`? If not, see "micro-ROS
+  builds but the node never appears" below.
+
 ## It moves for a moment, then stops
 
 Working as designed. The safety timeout stops the motors when no
 command has arrived for 500 ms. Send commands repeatedly (`-r 10` with
 `ros2 topic pub`) rather than once.
 
-## `ros2 run` says package not found
+## `ros2 run` / `ros2 launch` says package not found
 
-You forgot:
+Either the workspace was never built, or this terminal hasn't loaded it:
 
 ```bash
-source install/setup.bash
+cd ~/AI-Camp/ros2_ws
+colcon build                 # once, and after changing Python code
+source install/setup.bash    # every new terminal
 ```
-
-In every new terminal. Every time.
 
 ## I'm driving someone else's robot
 
@@ -177,7 +233,7 @@ Changing it in `config.h` means re-uploading -- it's compiled in.
 - Broker address in the app is the computer's IP, not `localhost`.
 - Check the broker sees it:
   ```bash
-  mosquitto_sub -h localhost -t 'robot/#' -v
+  mosquitto_sub -t 'robot/#' -v
   ```
   Press a button. Nothing appearing means the problem is phone-to-broker,
   not broker-to-robot.

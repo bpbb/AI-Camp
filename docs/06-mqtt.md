@@ -47,25 +47,39 @@ That last row is why this lesson exists.
 
 Exactly like the talker and listener in lesson 2, but with MQTT tools.
 Your computer is already running a broker (`setup_pc.sh` installed it).
+If `mosquitto_sub` says "command not found", it didn't -- run
+`sudo apt install mosquitto mosquitto-clients`, then see
+[troubleshooting.md](troubleshooting.md#mqtt-the-gateway-dies-straight-away)
+to let other devices reach it.
 
 Terminal 1 — subscribe and wait:
 
 ```bash
-mosquitto_sub -h localhost -t test/hello -v
+mosquitto_sub -t test/hello -v
 ```
 
 Terminal 2 — publish:
 
 ```bash
-mosquitto_pub -h localhost -t test/hello -m "hi there"
+mosquitto_pub -t test/hello -m "hi there"
 ```
 
 The message appears in terminal 1. No code, no compiling, no `source`.
 
+The two letters to know:
+
+| | means |
+|---|---|
+| `-t` | **t**opic -- which postbox |
+| `-m` | **m**essage -- what to put in it |
+
+(`-v` on `mosquitto_sub` just prints the topic name next to each
+message. No `-h` needed: the broker is on this computer.)
+
 Now try the wildcard. Stop terminal 1 and run:
 
 ```bash
-mosquitto_sub -h localhost -t 'test/#' -v
+mosquitto_sub -t 'test/#' -v
 ```
 
 `#` means "this topic and everything below it". Publish to
@@ -100,31 +114,68 @@ a node that subscribes to MQTT and publishes `/cmd_vel`.
   └──────────┘
 ```
 
-**Do not re-flash the robot.** It keeps the micro-ROS firmware from
-lesson 5. As far as the ESP32 can tell, somebody is publishing to
-`/cmd_vel` — and it never asks who.
+**The robot uses the micro-ROS firmware from lesson 5** — not the
+`mqtt` firmware, which is only for the
+[appendix](appendix-mqtt-robot.md). The robot never sees MQTT here. As
+far as the ESP32 can tell, somebody is publishing to `/cmd_vel` — and
+it never asks who.
 
-Start the agent and the robot as in lesson 5, then:
+| Firmware on the robot right now | What to do |
+|---|---|
+| `microros`, straight after lesson 5 | nothing, skip the upload |
+| `motortest`, `mqtt`, or not sure | upload micro-ROS (below) |
+
+To upload it, with the USB cable plugged in, run this from the project folder:
 
 ```bash
-export ROS_DOMAIN_ID=7
-ros2 launch teleop mqtt_gateway.launch.py host:=<your-computer-ip>
+./scripts/build_firmware.sh microros upload
 ```
+
+Then start everything in order, one terminal each:
+
+1. The agent: `./scripts/start_agent.sh`
+2. Power on or reset the robot, and wait for `agent: connected`. Watch
+   with `./scripts/build_firmware.sh microros monitor`.
+3. Check that it's there: `ros2 node list` shows `/esp32_robot`.
+
+Then start the gateway:
+
+```bash
+source ~/AI-Camp/ros2_ws/install/setup.bash
+export ROS_DOMAIN_ID=7
+ros2 launch teleop mqtt_gateway.launch.py
+```
+
+No IP needed: the gateway runs on the same computer as the broker, so
+it connects to `localhost`. (Only if the broker is on a *different*
+computer, add `host:=<that-computer's-ip>`.) The robot and the phone
+still need your real IP -- that goes in `config.h` and the app.
+
+You should see `robot/robot1/cmd (mqtt)  ->  /cmd_vel (ros 2)`. If it
+says `process has died` instead, see
+[troubleshooting.md](troubleshooting.md#mqtt-the-gateway-dies-straight-away).
 
 ## Drive the robot by typing
 
 ```bash
-mosquitto_pub -h localhost -t robot/robot1/cmd -m F
-mosquitto_pub -h localhost -t robot/robot1/cmd -m S
+mosquitto_pub -t robot/robot1/cmd -m F
+mosquitto_pub -t robot/robot1/cmd -m S
 ```
 
+Use your own `ROBOT_ID` from `config.h` in place of `robot1`.
 `F` forward, `B` back, `L` left, `R` right, `S` stop. The gateway
-prints what it received and the robot moves.
+prints what it received and the robot moves -- for about a second,
+then it stops by itself. That's on purpose; see "Try this" below.
+
+The gateway printing `'F' -> lin=+0.20` but the robot not moving means
+the problem is after the gateway: is the robot running the **micro-ROS**
+firmware (not the motor test), is the agent running, and does
+`ros2 node list` show `/esp32_robot`?
 
 It also understands JSON, for exact speeds:
 
 ```bash
-mosquitto_pub -h localhost -t robot/robot1/cmd -m '{"lin":0.1,"ang":0.5}'
+mosquitto_pub -t robot/robot1/cmd -m '{"lin":0.1,"ang":0.5}'
 ```
 
 ## Watch all three layers at once
@@ -132,7 +183,7 @@ mosquitto_pub -h localhost -t robot/robot1/cmd -m '{"lin":0.1,"ang":0.5}'
 Four terminals, and the whole chain is visible:
 
 ```bash
-mosquitto_sub -h localhost -t 'robot/#' -v    # the MQTT side
+mosquitto_sub -t 'robot/#' -v    # the MQTT side
 ros2 topic echo /cmd_vel                      # the ROS 2 side
 ros2 node list                                # who is involved
 rqt_graph                                     # the picture

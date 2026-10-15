@@ -1,7 +1,7 @@
 """
 Lessons 6 and 7 -- the MQTT gateway.
 
-    ros2 launch teleop mqtt_gateway.launch.py host:=192.168.1.100
+    ros2 launch teleop mqtt_gateway.launch.py
 
 Subscribes to MQTT and publishes /cmd_vel, so anything that can speak
 MQTT -- a terminal in lesson 6, a phone in lesson 7 -- can drive the
@@ -25,7 +25,7 @@ def generate_launch_description():
     robot_id = LaunchConfiguration('robot_id')
 
     return LaunchDescription([
-        DeclareLaunchArgument('host', default_value='192.168.1.100',
+        DeclareLaunchArgument('host', default_value='localhost',
                               description='MQTT broker address'),
         DeclareLaunchArgument('robot_id', default_value='robot1',
                               description='which robot the phone drives'),

@@ -10,7 +10,7 @@
 //  and rqt_graph draws it next to your computer's nodes.
 //
 //  Run the agent on the computer first:
-//    ros2 run micro_ros_agent micro_ros_agent udp4 --port 8888
+//    ./scripts/start_agent.sh        (listens on AGENT_PORT, 8888)
 // ============================================================
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
@@ -39,6 +39,7 @@ std_msgs__msg__Int32 beatMsg;
 rcl_timer_t beatTimer;
 
 unsigned long lastCommand = 0;
+unsigned long lastPing = 0;
 
 // ============================================================
 //  THE PART THAT MATTERS
@@ -132,10 +133,24 @@ void setup() {
 
   // This one line replaces all the transport code you would write by
   // hand on an STM32: it joins the WiFi and points micro-ROS at the agent.
+  // The line after this waits for WiFi forever, silently. Say what we
+  // can see first, so a wrong name or a 5 GHz-only network is obvious.
+  WiFi.mode(WIFI_STA);
+  int found = WiFi.scanNetworks();
+  bool seen = false;
+  Serial.printf("\nwifi: %d networks in range (2.4 GHz only):\n", found);
+  for (int i = 0; i < found; i++) {
+    Serial.printf("  %s  (%d dBm)\n", WiFi.SSID(i).c_str(), WiFi.RSSI(i));
+    if (WiFi.SSID(i) == WIFI_SSID) seen = true;
+  }
+  if (!seen) Serial.printf("wifi: \"%s\" NOT in range -- wrong name, or 5 GHz?\n", WIFI_SSID);
+  Serial.printf("wifi: joining \"%s\" ...\n", WIFI_SSID);
+
   IPAddress agent;
   agent.fromString(AGENT_IP);
   set_microros_wifi_transports(WIFI_SSID, WIFI_PASSWORD, agent, AGENT_PORT);
 
+  Serial.printf("wifi: ok, my IP is %s\n", WiFi.localIP().toString().c_str());
   delay(2000);   // let WiFi actually associate before we talk to the agent
 }
 
@@ -148,16 +163,27 @@ void loop() {
         if (state == AGENT_CONNECTED) Serial.println("agent: connected");
       } else {
         stopMotors();
+        // Say what we're waiting for, so a silent monitor isn't a mystery.
+        if (WiFi.status() != WL_CONNECTED) {
+          Serial.printf("wifi: not connected to \"%s\" yet\n", WIFI_SSID);
+        } else {
+          Serial.printf("agent: waiting for %s:%d (my IP %s)\n", AGENT_IP,
+                        AGENT_PORT, WiFi.localIP().toString().c_str());
+        }
         delay(500);
       }
       break;
 
     case AGENT_CONNECTED:
-      // Check every so often that the agent is still there.
-      if (rmw_uros_ping_agent(200, 3) != RMW_RET_OK) {
-        Serial.println("agent: lost");
-        state = AGENT_DISCONNECTED;
-        break;
+      // Check every so often that the agent is still there. Not every
+      // loop: each ping is a WiFi round trip that delays /cmd_vel.
+      if (millis() - lastPing > 500) {
+        lastPing = millis();
+        if (rmw_uros_ping_agent(100, 3) != RMW_RET_OK) {
+          Serial.println("agent: lost");
+          state = AGENT_DISCONNECTED;
+          break;
+        }
       }
       rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
 

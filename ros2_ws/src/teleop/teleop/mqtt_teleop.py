@@ -14,7 +14,7 @@ into the Twist messages the robot already understands.
 The robot's firmware does not change at all; as far as it can tell,
 someone is just publishing to /cmd_vel.
 
-    ros2 run teleop mqtt_teleop --ros-args -p host:=192.168.1.100
+    ros2 run teleop mqtt_teleop
 """
 import json
 
@@ -49,7 +49,7 @@ class MqttTeleop(Node):
     def __init__(self):
         super().__init__('mqtt_teleop')
 
-        self.declare_parameter('host', '192.168.1.100')
+        self.declare_parameter('host', 'localhost')
         self.declare_parameter('port', 1883)
         self.declare_parameter('robot_id', 'robot1')
 

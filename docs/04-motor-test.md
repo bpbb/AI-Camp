@@ -51,9 +51,11 @@ Watch the wheels and tick these off:
 
 ## When something's wrong
 
-**A wheel turns the wrong way.** Swap that motor's two wires at the
-driver. Don't fix it in software -- the code is right, the wiring is
-backwards.
+**A wheel turns the wrong way.** Either swap that motor's two wires at
+the driver, or swap its two direction pins in
+[motor.h](../firmware/include/motor.h) (`L_IN1`/`L_IN2` for the left
+wheel, `R_IN1`/`R_IN2` for the right) and upload again. Both work. If
+*both* wheels are backwards, swap both pairs.
 
 **The wrong wheel moves.** Your left and right motors are swapped at
 the driver. Swap the two pairs.
@@ -71,8 +73,11 @@ than the supply can give, and the voltage is sagging. Use a separate
 battery for the motors, and check the grounds are joined
 ([03-hardware.md](03-hardware.md)).
 
-**Only one wheel ever moves.** Check that wheel's three wires at the
-driver, and check the driver's own jumper for that channel.
+**Only one wheel ever moves.** Most often the pins in
+[motor.h](../firmware/include/motor.h) don't match how you wired it --
+compare them one by one with the table in
+[03-hardware.md](03-hardware.md). Then check that wheel's three wires
+at the driver, and the ENA/ENB jumper on an L298N.
 
 ## Measure your robot
 

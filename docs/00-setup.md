@@ -20,8 +20,9 @@ does not block the start.
 
 ## What you need
 
-- A computer with **Ubuntu 24.04**
-  (`setup_pc.sh` installs ROS 2 Jazzy if it isn't there yet)
+- A computer with **Ubuntu 24.04** (ROS 2 Jazzy) or **22.04** (ROS 2
+  Humble). `setup_pc.sh` works out which one and installs ROS 2 if it
+  isn't there yet. Check yours with `lsb_release -ds`.
 - **VS Code**
 - An ESP32 dev board and a USB cable (a *data* cable -- charge-only
   cables will not work and give no useful error)
@@ -58,6 +59,15 @@ No docker anywhere. Everything runs directly on the machine.
 > system Python. `setup_pc.sh` uses `pipx` and `apt` instead, so you
 > should not hit it. If you do, do not reinstall Python.
 
+Then allow your user to upload to the ESP32 over USB:
+
+```bash
+sudo usermod -aG dialout $USER
+```
+
+**Log out and back in** (or reboot) for this to take effect. Without it
+uploads fail with `Permission denied /dev/ttyUSB0`.
+
 ## 3. Tell the robot where your computer is
 
 Open `firmware/include/config.h` and fill in:
@@ -65,11 +75,23 @@ Open `firmware/include/config.h` and fill in:
 ```c
 #define WIFI_SSID      "..."      // your network
 #define WIFI_PASSWORD  "..."
-#define ROBOT_ID       "robot1"   // your team name
+#define ROBOT_ID       "robot1"   // your robot name
 #define AGENT_IP       "..."      // the IP from step 2
 #define MQTT_HOST      "..."      // the same IP
 #define ROS_DOMAIN_ID  0          // your team's number -- see lesson 2
 ```
+
+Forgot the IP? Run `hostname -I` and use the **first** address. Ignore
+`172.17.x.x` -- that's Docker, not your WiFi.
+
+Then open `firmware/platformio.ini` and make this line match your ROS 2
+(`ls /opt/ros` tells you which you have):
+
+```ini
+board_microros_distro = humble   ; jazzy on 24.04, humble on 22.04
+```
+
+If you change it, delete `firmware/.pio` so the old one isn't reused.
 
 Every team needs a **different** `ROBOT_ID` and a **different**
 `ROS_DOMAIN_ID`, or you will drive each other's robots.
@@ -84,14 +106,18 @@ source install/setup.bash
 
 You need that `source` line in **every new terminal**. Forgetting it is
 the single most common reason `ros2 run` says "package not found".
+Lesson 1 shows how to put it in `~/.bashrc` so it happens by itself.
 
 ## 5. Warm up the firmware build
 
 ```bash
-cd firmware
-pio run -e motortest
-pio run -e microros     # this is the slow one, ~10 minutes
+./scripts/build_firmware.sh motortest
+./scripts/build_firmware.sh microros    # the slow one, ~10 minutes
 ```
+
+Run these from the project folder, not from inside `firmware/`. The
+script picks the right program and clears ROS settings that would
+otherwise break the micro-ROS build.
 
 Both should end in `SUCCESS`.
 
@@ -116,4 +142,9 @@ The robot and your computer must be on the **same network**, and that
 network must allow devices to talk to each other. Many school and
 guest networks block this on purpose ("client isolation"). If nothing
 works later and everything looks right, this is usually why -- use a
-dedicated router.
+dedicated router or a phone hotspot (set to 2.4 GHz).
+
+Open "guest" networks are the worst case: they usually need a login
+web page, which the ESP32 cannot do, *and* they block devices from
+reaching each other. If your only WiFi has no password and a login
+page, plan on a hotspot.

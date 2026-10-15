@@ -8,11 +8,12 @@ See docs/appendix-mqtt-robot.md.
 Plain Python. It connects to the broker and sends one letter per
 keypress.
 
-    python3 scripts/mqtt_drive.py 192.168.1.100 robot1
+    python3 scripts/mqtt_drive.py              # broker on this PC, robot1
 
     w/s : forward / back      a/d : left / right
     space : stop              q : quit
 """
+import select
 import sys
 import termios
 import tty
@@ -37,7 +38,7 @@ KEYS = {
 
 
 def main():
-    host = sys.argv[1] if len(sys.argv) > 1 else '192.168.1.100'
+    host = sys.argv[1] if len(sys.argv) > 1 else 'localhost'
     robot_id = sys.argv[2] if len(sys.argv) > 2 else 'robot1'
     topic = f'robot/{robot_id}/cmd'
 
@@ -56,13 +57,20 @@ def main():
     settings = termios.tcgetattr(sys.stdin)
     try:
         tty.setcbreak(sys.stdin.fileno())
+        current = 'S'
         while True:
-            key = sys.stdin.read(1)
-            if key == 'q':
-                break
-            if key in KEYS:
-                client.publish(topic, KEYS[key])
-                print(f'sent {KEYS[key]}')
+            # Resend the last command 10 times a second. The robot stops
+            # after 500 ms of silence, so one message per key press is
+            # not enough to keep it moving.
+            ready, _, _ = select.select([sys.stdin], [], [], 0.1)
+            if ready:
+                key = sys.stdin.read(1)
+                if key == 'q':
+                    break
+                if key in KEYS and KEYS[key] != current:
+                    current = KEYS[key]
+                    print(f'sending {current}')
+            client.publish(topic, current)
     except KeyboardInterrupt:
         pass
     finally:

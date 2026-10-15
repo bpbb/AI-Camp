@@ -101,10 +101,26 @@ firmware you have ever built on this machine, add about 8 minutes for
 downloading the ESP32 compiler. After that everything is cached and
 rebuilds take seconds.
 
-## Start the agent
+Before uploading, check `firmware/include/config.h` has your WiFi,
+your computer's IP (`hostname -I`, first address) in `AGENT_IP`, and
+your domain number. If the upload fails, see
+[troubleshooting.md](troubleshooting.md#the-board-wont-upload).
+
+## Every terminal from here on
+
+Each new terminal you open in lessons 5-7 needs these two lines first
+(skip the `source` line if you added it to `~/.bashrc` in lesson 1):
 
 ```bash
+source ~/AI-Camp/ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=7
+```
+
+## Start the agent
+
+Terminal 1:
+
+```bash
 ./scripts/start_agent.sh
 ```
 
@@ -114,10 +130,9 @@ reach your computer -- check [troubleshooting.md](troubleshooting.md).
 
 ## Drive
 
-New terminal:
+Terminal 2 (with the two lines above):
 
 ```bash
-export ROS_DOMAIN_ID=7
 ros2 run teleop key_teleop
 ```
 
@@ -125,7 +140,8 @@ ros2 run teleop key_teleop
 
 ## Prove the ESP32 is really a node
 
-This is the moment the lesson is about. With everything running:
+This is the moment the lesson is about. With everything running, in
+terminal 3:
 
 ```bash
 ros2 node list

@@ -13,12 +13,14 @@
 // Avoid GPIO 0, 2, 12 and 15: the ESP32 reads those at boot to
 // decide how to start up, and a motor driver pulling on them can
 // stop the board from booting at all.
-#define L_PWM 25
-#define L_IN1 26
-#define L_IN2 27
-#define R_PWM 33
-#define R_IN1 14
-#define R_IN2 13
+// IN1/IN2 and IN3/IN4 are swapped here so "forward" matches how the
+// motors are mounted. If one wheel runs backwards, swap just its pair.
+#define L_IN1 26   // IN2
+#define L_IN2 27   // IN1
+#define L_PWM 14   // ENA
+#define R_IN1 33   // IN4
+#define R_IN2 25   // IN3
+#define R_PWM 32   // ENB
 
 #define PWM_FREQ 20000   // 20 kHz: above hearing, so the motors don't whine
 #define PWM_RES  8       // 8-bit resolution -> duty is 0..255

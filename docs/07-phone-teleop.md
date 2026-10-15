@@ -35,7 +35,7 @@ The phone must be on the **same WiFi** as your computer.
 On your computer:
 
 ```bash
-mosquitto_sub -h localhost -t 'test/#' -v
+mosquitto_sub -t 'test/#' -v
 ```
 
 Add a temporary Button panel in the app publishing `hello` to
@@ -87,11 +87,13 @@ you let go.
 
 ## Run it
 
-Agent, robot and gateway all running as in lesson 6:
+Agent, robot and gateway all running as in lesson 6. The gateway needs
+no IP; only the phone app does (`hostname -I`, first address):
 
 ```bash
+source ~/AI-Camp/ros2_ws/install/setup.bash
 export ROS_DOMAIN_ID=7
-ros2 launch teleop mqtt_gateway.launch.py host:=<your-computer-ip>
+ros2 launch teleop mqtt_gateway.launch.py
 ```
 
 Press a button. You should see it arrive:

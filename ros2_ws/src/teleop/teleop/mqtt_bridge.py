@@ -10,7 +10,7 @@ Not used in the lessons -- see docs/appendix-mqtt-robot.md. Note it
 points the OPPOSITE way to mqtt_teleop.py, which converts MQTT into
 /cmd_vel so a phone can drive the micro-ROS robot.
 
-    ros2 run teleop mqtt_bridge --ros-args -p host:=192.168.1.100
+    ros2 run teleop mqtt_bridge
 """
 import json
 
@@ -40,7 +40,7 @@ class MqttBridge(Node):
         super().__init__('mqtt_bridge')
 
         # Parameters, so nobody has to edit this file to change the broker.
-        self.declare_parameter('host', '192.168.1.100')
+        self.declare_parameter('host', 'localhost')
         self.declare_parameter('port', 1883)
         self.declare_parameter('robot_id', 'robot1')
 

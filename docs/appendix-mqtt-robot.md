@@ -19,8 +19,15 @@ here it converts `/cmd_vel` *into* MQTT for a robot that doesn't.
 
 ## Flash it
 
-Switch the env to **`env:mqtt`** and upload. This replaces the
-micro-ROS firmware -- you'll need to re-flash `env:microros` to go back.
+With the USB cable plugged in, run this from the project folder:
+
+```bash
+./scripts/build_firmware.sh mqtt upload
+./scripts/build_firmware.sh mqtt monitor     # watch it connect
+```
+
+This replaces the micro-ROS firmware. To go back to lessons 5–7, run
+`./scripts/build_firmware.sh microros upload`.
 
 Serial Monitor should show:
 
@@ -32,27 +39,31 @@ mqtt: ok, listening on robot/robot1/cmd
 ## Drive it with no ROS 2 at all
 
 ```bash
-mosquitto_pub -h localhost -t robot/robot1/cmd -m F
-mosquitto_pub -h localhost -t robot/robot1/cmd -m S
+mosquitto_pub -t robot/robot1/cmd -m F
+mosquitto_pub -t robot/robot1/cmd -m S
 ```
 
 `F` forward, `B` back, `L` left, `R` right, `S` stop. Or with the
 keyboard:
 
 ```bash
-python3 scripts/mqtt_drive.py <broker-ip> robot1
+python3 scripts/mqtt_drive.py
 ```
+
+Press a key once and the robot **keeps** doing it -- the script resends
+it 10 times a second. Press **space** to stop. Quitting with `q` also
+stops it.
 
 It also understands JSON, if you want exact speeds:
 
 ```bash
-mosquitto_pub -h localhost -t robot/robot1/cmd -m '{"lin":0.1,"ang":0.5}'
+mosquitto_pub -t robot/robot1/cmd -m '{"lin":0.1,"ang":0.5}'
 ```
 
 ## Watch the traffic
 
 ```bash
-mosquitto_sub -h localhost -t 'robot/#' -v
+mosquitto_sub -t 'robot/#' -v
 ```
 
 `#` means "everything below here". You'll see commands going out and
@@ -61,7 +72,7 @@ the robot's status coming back once a second.
 ## Drive it from ROS 2 anyway
 
 ```bash
-ros2 run teleop mqtt_bridge --ros-args -p host:=<broker-ip>
+ros2 run teleop mqtt_bridge
 ros2 run teleop key_teleop          # in another terminal
 ```
 
