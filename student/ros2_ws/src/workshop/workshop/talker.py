@@ -1,20 +1,19 @@
 #!/usr/bin/env python3
 """
-LESSON 2 -- a publisher.
+บทที่ 2 -- publisher
 
-It shouts into a topic and does not care who listens.
+ส่ง message ออกไปที่ topic โดยไม่สนว่ามีใครรับอยู่หรือไม่
 
     ros2 run workshop talker
 
-Try running it with no listener at all. It keeps going quite happily --
-a publisher never knows whether anyone is there. That is the single
-most important idea in ROS 2.
+ลองรันโดยไม่มี listener ดู มันยังทำงานต่อได้ปกติ เพราะ publisher
+ไม่รู้ว่ามีใครรับอยู่ นี่คือแนวคิดที่สำคัญที่สุดของ ROS 2
 """
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
-# ---- CHANGE THESE AND SEE WHAT HAPPENS ----
+# ---- ลองแก้ค่าเหล่านี้แล้วดูผลลัพธ์ ----
 TOPIC = 'chatter'
 MESSAGE = 'hello'
 RATE_HZ = 1.0
@@ -22,11 +21,11 @@ RATE_HZ = 1.0
 
 class Talker(Node):
     def __init__(self):
-        # 'talker' is the node name -- what shows up in `ros2 node list`
+        # 'talker' คือชื่อ node ที่จะแสดงใน `ros2 node list`
         super().__init__('talker')
 
-        # Make a publisher: what type of message, which topic, and how
-        # many messages to keep if the listener is slow.
+        # สร้าง publisher: ระบุชนิด message, topic และจำนวน message
+        # ที่เก็บไว้ (queue) เผื่อฝั่งรับทำงานช้า
         self.pub = self.create_publisher(String, TOPIC, 10)
 
         self.count = 0
@@ -47,7 +46,7 @@ def main():
     rclpy.init()
     node = Talker()
     try:
-        rclpy.spin(node)          # loop forever, letting timers fire
+        rclpy.spin(node)          # วนลูปไม่รู้จบ ให้ timer ทำงาน
     except KeyboardInterrupt:
         pass
     finally:

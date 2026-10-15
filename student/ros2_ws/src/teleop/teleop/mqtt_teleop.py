@@ -1,16 +1,12 @@
 #!/usr/bin/env python3
 """
-LESSON 6 -- the MQTT gateway.
+บทที่ 6 -- MQTT gateway
 
     anything --MQTT--> mqtt_teleop --/cmd_vel--> esp32_robot
 
-Lots of things speak MQTT and cannot speak ROS 2 -- a terminal running
-mosquitto_pub (lesson 6), a phone app (lesson 7), a sensor somewhere
-else entirely. This node translates whatever arrives on an MQTT topic
-into the Twist messages the robot already understands.
-
-The robot's firmware does not change at all; as far as it can tell,
-someone is just publishing to /cmd_vel.
+แปลงข้อความจาก MQTT topic เป็น Twist บน /cmd_vel
+เพื่อให้อุปกรณ์ที่พูด MQTT ได้แต่พูด ROS 2 ไม่ได้ (mosquitto_pub ในบทที่ 6,
+แอปมือถือในบทที่ 7) ขับหุ่นยนต์ได้ โดยไม่ต้องแก้ firmware
 
     ros2 run teleop mqtt_teleop
 """
@@ -25,7 +21,7 @@ from teleop.robot_config import robot_id as configured_robot_id
 
 import paho.mqtt.client as mqtt
 
-# What each button on the phone means, in m/s and rad/s.
+# ความหมายของแต่ละปุ่มบนมือถือ (m/s, rad/s)
 LETTERS = {
     'F': (0.20, 0.0),
     'B': (-0.20, 0.0),
@@ -35,11 +31,11 @@ LETTERS = {
 }
 
 PUBLISH_HZ = 10.0
-SILENCE_TIMEOUT = 1.0   # seconds before we assume the phone went away
+SILENCE_TIMEOUT = 1.0   # วินาทีที่เงียบก่อนถือว่ามือถือหลุดไป
 
 
 def make_client():
-    """paho-mqtt 2.x needs an argument that 1.x does not accept."""
+    """paho-mqtt 2.x ต้องมี argument ที่ 1.x ไม่รองรับ"""
     try:
         return mqtt.Client(mqtt.CallbackAPIVersion.VERSION1)
     except AttributeError:
@@ -79,14 +75,13 @@ class MqttTeleop(Node):
         self.client.subscribe(self.topic)
         self.client.loop_start()
 
-        # Republish steadily rather than only when the phone sends
-        # something. The robot stops if it stops hearing commands, and
-        # a phone button only fires on press and release.
+        # publish ซ้ำต่อเนื่อง ไม่ใช่เฉพาะตอนมือถือส่งมา
+        # เพราะหุ่นยนต์จะหยุดถ้าไม่ได้รับคำสั่ง และปุ่มมือถือส่งแค่ตอนกด/ปล่อย
         self.create_timer(1.0 / PUBLISH_HZ, self.tick)
 
         self.get_logger().info(f'{self.topic} (mqtt)  ->  /cmd_vel (ros 2)')
 
-    # Runs on the MQTT library's thread, not the ROS one.
+    # ทำงานบน thread ของไลบรารี MQTT ไม่ใช่ของ ROS
     def on_mqtt(self, client, userdata, message):
         text = message.payload.decode(errors='replace').strip()
 
@@ -105,8 +100,8 @@ class MqttTeleop(Node):
         self.get_logger().info(f'{text!r} -> lin={self.lin:+.2f} ang={self.ang:+.2f}')
 
     def tick(self):
-        # If the phone goes quiet -- app closed, screen locked, WiFi
-        # dropped -- stop asking the robot to move.
+        # ถ้ามือถือเงียบไป (ปิดแอป, ล็อกจอ, WiFi หลุด)
+        # ให้หุ่นยนต์หยุด
         silent = (self.get_clock().now() - self.last_seen).nanoseconds / 1e9
         if silent > SILENCE_TIMEOUT:
             self.lin = 0.0
@@ -125,8 +120,8 @@ class MqttTeleop(Node):
 
 
 def main():
-    # Let Ctrl+C reach our own code instead of shutting ROS down
-    # first, so the final "stop" message can still be sent.
+    # ให้ Ctrl+C มาถึงโค้ดของเราก่อน ROS ปิดตัว
+    # เพื่อให้ยังส่งคำสั่ง "หยุด" สุดท้ายได้
     rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
     node = MqttTeleop()
     try:

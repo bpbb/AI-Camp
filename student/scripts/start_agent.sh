@@ -1,20 +1,19 @@
 #!/usr/bin/env bash
-# Starts the micro-ROS agent for lesson 5.
+# เริ่ม micro-ROS agent สำหรับบทที่ 5
 #
-#   ./scripts/start_agent.sh          # udp on port 8888
-#   ./scripts/start_agent.sh 9999     # some other port
+#   ./scripts/start_agent.sh          # udp port 8888
+#   ./scripts/start_agent.sh 9999     # ใช้ port อื่น
 #
-# The agent joins whatever ROS_DOMAIN_ID your shell is set to, so it
-# must match the ROS_DOMAIN_ID in firmware/include/config.h.
-# No `set -u`: sourcing the ROS setup scripts below fails under it,
-# because they read variables they never set.
+# agent ใช้ ROS_DOMAIN_ID ตามที่ตั้งไว้ใน shell ซึ่งต้องตรงกับ
+# ROS_DOMAIN_ID ใน firmware/include/config.h
+# ไม่ใช้ `set -u` เพราะ ROS setup script อ่านตัวแปรที่ไม่ได้ตั้งค่าไว้
 set -eo pipefail
 
 PORT="${1:-8888}"
 DOMAIN="${ROS_DOMAIN_ID:-0}"
 AGENT_WS="${HOME}/microros_agent_ws"
 
-# Works on Jazzy (24.04) and Humble (22.04) -- whichever is installed.
+# ใช้ได้ทั้ง Jazzy (24.04) และ Humble (22.04) ตามที่ติดตั้งไว้
 ROS_SETUP=""
 for d in jazzy humble; do
     [ -f "/opt/ros/${d}/setup.bash" ] && ROS_SETUP="/opt/ros/${d}/setup.bash" && break

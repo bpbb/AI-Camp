@@ -1,20 +1,16 @@
 #!/usr/bin/env python3
 """
-LESSON 5 -- Driving the robot from the keyboard.
+บทที่ 5 -- ขับหุ่นยนต์ด้วยคีย์บอร์ด
 
-Reads the keyboard and publishes a Twist message on /cmd_vel. It is the
-same shape as the talker you ran in lesson 2: a node, a publisher, and
-a topic. Only the message type and the topic name have changed.
+อ่านปุ่มคีย์บอร์ดแล้ว publish Twist ไปที่ /cmd_vel
+(โครงสร้างเหมือน talker ในบทที่ 2: node + publisher + topic)
+Twist บอกแค่ความเร็วเดินหน้าและความเร็วเลี้ยว ไม่ผูกกับหุ่นยนต์ตัวใด
+หุ่นยนต์ใดที่เข้าใจ /cmd_vel ก็ขับด้วย node นี้ได้
 
-A Twist says "how fast forward" and "how fast turning". It does not
-know anything about your robot: no wheels, no motors, no ESP32. That
-is the point. Any robot that understands /cmd_vel can be driven by
-this node, and this node never has to change.
-
-    w/s : forward / back
-    a/d : turn left / right
-    space : stop
-    q : quit
+    w/s : เดินหน้า / ถอยหลัง
+    a/d : เลี้ยวซ้าย / ขวา
+    space : หยุด
+    q : ออก
 """
 import sys
 import termios
@@ -28,13 +24,11 @@ from geometry_msgs.msg import Twist
 
 HELP = __doc__
 
-LINEAR_STEP = 0.05   # m/s added per key press
-ANGULAR_STEP = 0.5   # rad/s added per key press
+LINEAR_STEP = 0.05   # m/s ที่เพิ่มต่อการกดหนึ่งครั้ง
+ANGULAR_STEP = 0.5   # rad/s ที่เพิ่มต่อการกดหนึ่งครั้ง
 LINEAR_MAX = 0.30
-ANGULAR_MAX = 4.0    # at WHEEL_BASE 0.15 this is a full-speed spin
+ANGULAR_MAX = 4.0    # ที่ WHEEL_BASE 0.15 คือหมุนตัวเต็มความเร็ว
 
-# Below these the motors buzz but the robot doesn't move (deadzone).
-# The first press jumps straight here instead of creeping up from zero.
 LINEAR_MIN = 0.15
 ANGULAR_MIN = 2.0
 
@@ -44,8 +38,8 @@ def clamp(value, limit):
 
 
 def step(value, delta, low, high):
-    """Add delta, but skip the deadzone: 0 jumps to +-low, and
-    anything that would land inside (-low, low) goes back to 0."""
+    """บวก delta โดยข้าม deadzone: จาก 0 กระโดดไป +-low
+    และค่าที่ตกอยู่ในช่วง (-low, low) จะกลับเป็น 0"""
     if value == 0.0:
         return clamp(low if delta > 0 else -low, high)
     new = value + delta
@@ -61,16 +55,15 @@ class KeyTeleop(Node):
         self.lin = 0.0
         self.ang = 0.0
 
-        # Publish 10 times a second whether or not a key was pressed.
-        # The robot stops if it stops hearing from us, so we have to
-        # keep talking.
+        # publish 10 ครั้งต่อวินาทีเสมอ แม้ไม่มีการกดปุ่ม
+        # เพราะหุ่นยนต์จะหยุดเองถ้าไม่ได้รับคำสั่ง
         self.create_timer(0.1, self.tick)
 
     def tick(self):
         msg = Twist()
-        # TODO(student) 3/4 -- lesson 5: put our speeds into the message.
-        #   self.lin goes in msg.linear.x, self.ang in msg.angular.z.
-        #   Leave them out and the robot receives all zeros: it never moves.
+        # TODO(student) 3/4 -- บทที่ 5: ใส่ความเร็วลงใน message
+        #   self.lin ใส่ใน msg.linear.x และ self.ang ใส่ใน msg.angular.z
+        #   ถ้าไม่ใส่ หุ่นยนต์จะได้รับค่าศูนย์ทั้งหมดและไม่ขยับ
         self.pub.publish(msg)
 
     def handle_key(self, key):
@@ -80,33 +73,33 @@ class KeyTeleop(Node):
             self.lin = 0.0
             self.ang = 0.0
 
-        # TODO(student) 4/4 -- lesson 5: make w/s/a/d change the speeds.
-        #   w faster forward, s slower/backwards  -> change self.lin
-        #   a turn left,      d turn right        -> change self.ang
-        #   Use step() from the top of this file, for example:
+        # TODO(student) 4/4 -- บทที่ 5: ให้ w/s/a/d เปลี่ยนความเร็ว
+        #   w เดินหน้าเร็วขึ้น, s ช้าลง/ถอยหลัง  -> เปลี่ยน self.lin
+        #   a เลี้ยวซ้าย,      d เลี้ยวขวา       -> เปลี่ยน self.ang
+        #   ใช้ step() ที่ด้านบนของไฟล์ เช่น:
         #       self.lin = step(self.lin, LINEAR_STEP, LINEAR_MIN, LINEAR_MAX)
-        #   s and d go the other way: use -LINEAR_STEP and -ANGULAR_STEP.
+        #   s และ d ไปทางตรงข้าม: ใช้ -LINEAR_STEP และ -ANGULAR_STEP
 
         self.get_logger().info(f'lin={self.lin:+.2f}  ang={self.ang:+.2f}')
         return True
 
 
 def read_key(timeout=0.1):
-    """Grab one keypress without waiting for Enter."""
+    """อ่านปุ่มที่กดหนึ่งตัวโดยไม่ต้องรอ Enter"""
     if select.select([sys.stdin], [], [], timeout)[0]:
         return sys.stdin.read(1)
     return None
 
 
 def main():
-    # Let Ctrl+C reach our own code instead of shutting ROS down
-    # first, so the final "stop" message can still be sent.
+    # ให้ Ctrl+C มาถึงโค้ดของเราก่อน ROS ปิดตัว
+    # เพื่อให้ยังส่งคำสั่ง "หยุด" สุดท้ายได้
     rclpy.init(signal_handler_options=SignalHandlerOptions.NO)
     node = KeyTeleop()
     print(HELP)
 
-    # Put the terminal in raw mode so we see keys immediately.
-    # We must always put it back, or the shell is left unusable.
+    # ตั้ง terminal เป็น raw mode เพื่อรับปุ่มทันที
+    # ต้องคืนค่าเดิมเสมอ ไม่เช่นนั้น shell จะใช้งานไม่ได้
     settings = termios.tcgetattr(sys.stdin)
     try:
         tty.setcbreak(sys.stdin.fileno())
@@ -119,7 +112,7 @@ def main():
         pass
     finally:
         termios.tcsetattr(sys.stdin, termios.TCSADRAIN, settings)
-        # Always leave the robot stopped.
+        # ให้หุ่นยนต์หยุดเสมอก่อนออก
         stop = Twist()
         node.pub.publish(stop)
         node.destroy_node()

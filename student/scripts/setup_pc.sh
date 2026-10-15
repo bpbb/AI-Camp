@@ -1,22 +1,20 @@
 #!/usr/bin/env bash
-# Sets up a computer for the robot lessons.
+# ตั้งค่าคอมพิวเตอร์สำหรับบทเรียนหุ่นยนต์
 #
 #   ./scripts/setup_pc.sh
 #
-# Works on Ubuntu 24.04 (ROS 2 Jazzy) and 22.04 (ROS 2 Humble). It works
-# out which one you are on. Student machines are 24.04.
+# ใช้ได้กับ Ubuntu 24.04 (ROS 2 Jazzy) และ 22.04 (ROS 2 Humble) โดยตรวจเวอร์ชันให้อัตโนมัติ
+# ทุกเครื่องควรเหมือนกัน: สร้าง image ด้วยสคริปต์นี้ ตรวจด้วย
+# scripts/check_setup.sh แล้วจึง clone
 #
-# Every machine should end up identical: build one image with this,
-# check it with scripts/check_setup.sh, then clone it.
-#
-# No `set -u`: sourcing ROS setup scripts fails under it.
+# ไม่ใช้ `set -u` เพราะการ source ROS setup script จะล้มเหลว
 set -eo pipefail
 
 PLATFORMIO_VERSION="6.1.16"
 AGENT_WS="${HOME}/microros_agent_ws"
 
 # ---------------------------------------------------------------
-#  Which ROS 2 belongs on this machine?
+#  เครื่องนี้ควรใช้ ROS 2 ตัวไหน
 # ---------------------------------------------------------------
 . /etc/os-release
 case "${VERSION_ID}" in
@@ -28,7 +26,7 @@ case "${VERSION_ID}" in
         ;;
 esac
 
-# An already-installed ROS wins, so we never fight an existing setup.
+# ถ้ามี ROS ติดตั้งอยู่แล้วให้ใช้ตัวนั้น เพื่อไม่ชนกับ setup เดิม
 for d in jazzy humble; do
     [ -d "/opt/ros/${d}" ] && { WANT_DISTRO="${d}"; break; }
 done
@@ -36,7 +34,7 @@ done
 echo "==> Ubuntu ${VERSION_ID}, using ROS 2 ${WANT_DISTRO}"
 
 # ---------------------------------------------------------------
-#  ROS 2 itself
+#  ติดตั้ง ROS 2
 # ---------------------------------------------------------------
 if [ -d "/opt/ros/${WANT_DISTRO}" ]; then
     echo "==> ROS 2 ${WANT_DISTRO} already installed, skipping"
@@ -49,10 +47,9 @@ else
     sudo locale-gen en_US en_US.UTF-8
     sudo update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
 
-    # The keyring method on purpose, not the newer ros2-apt-source .deb.
-    # That one asks the GitHub API for the latest release, and a room
-    # full of machines behind one router gets rate-limited (HTTP 403).
-    # This talks only to packages.ros.org.
+# ใช้วิธี keyring แทน .deb ros2-apt-source เพราะตัวนั้นเรียก GitHub API
+# ซึ่งจะโดน rate-limit (HTTP 403) เมื่อหลายเครื่องใช้ router เดียวกัน
+# วิธีนี้ติดต่อแค่ packages.ros.org
     sudo curl -sSL https://raw.githubusercontent.com/ros/rosdistro/master/ros.key \
         -o /usr/share/keyrings/ros-archive-keyring.gpg
     echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu ${UBUNTU_CODENAME} main" \
@@ -63,7 +60,7 @@ else
 fi
 
 # ---------------------------------------------------------------
-#  Everything else from apt
+#  package อื่น ๆ จาก apt
 # ---------------------------------------------------------------
 echo "==> apt packages"
 sudo apt-get update
@@ -73,15 +70,12 @@ sudo apt-get install -y \
     python3-paho-mqtt \
     xterm
 
-# python3-venv is easy to miss and the failure is misleading. The
-# PlatformIO VS Code extension builds itself a virtualenv on first run;
-# without this package that fails, and the extension reports
-# "Can not find working Python 3.6+ Interpreter" -- which sends people
-# off reinstalling Python, which on Ubuntu breaks apt and ROS 2.
+# ต้องมี python3-venv: PlatformIO extension ของ VS Code สร้าง venv ตอนรันครั้งแรก
+# ถ้าไม่มีจะแจ้ง "Can not find working Python 3.6+ Interpreter" ซึ่งชวนเข้าใจผิด
+# ห้ามติดตั้ง Python ใหม่เอง เพราะจะทำให้ apt และ ROS 2 บน Ubuntu พัง
 #
-# paho-mqtt comes from apt rather than pip so it lands where the ROS
-# nodes can import it. The version differs between releases (1.6 on
-# 22.04, 2.x on 24.04); the nodes handle both, see make_client().
+# ติดตั้ง paho-mqtt จาก apt (ไม่ใช่ pip) เพื่อให้ ROS node import ได้
+# เวอร์ชันต่างกันตาม release (1.6 บน 22.04, 2.x บน 24.04) แต่ node รองรับทั้งคู่ ดู make_client()
 
 echo "==> letting other machines reach the broker"
 sudo tee /etc/mosquitto/conf.d/lan.conf >/dev/null <<'CONF'
@@ -96,9 +90,8 @@ sudo systemctl enable mosquitto
 # ---------------------------------------------------------------
 echo "==> PlatformIO ${PLATFORMIO_VERSION}"
 if ls /usr/lib/python3.*/EXTERNALLY-MANAGED >/dev/null 2>&1; then
-    # Ubuntu 24.04 enforces PEP 668: `pip3 install --user` is refused
-    # with "error: externally-managed-environment". pipx gives the tool
-    # its own venv, which is the supported way to install an app.
+    # Ubuntu 24.04 บังคับ PEP 668: `pip3 install --user` จะถูกปฏิเสธ
+    # จึงใช้ pipx ซึ่งสร้าง venv แยกให้แต่ละแอป (วิธีที่รองรับอย่างเป็นทางการ)
     echo "    (PEP 668 in force -- installing with pipx)"
     sudo apt-get install -y pipx
     pipx install "platformio==${PLATFORMIO_VERSION}" 2>/dev/null \
@@ -111,17 +104,12 @@ fi
 export PATH="${HOME}/.local/bin:${PATH}"
 
 echo "==> ROS build tools inside PlatformIO's own virtualenv"
-# Not obvious, and not optional.
+# จำเป็นต้องทำ: micro_ros_platformio build libmicroros ด้วย Python ของ PlatformIO
+# ที่ ~/.platformio/penv (ไม่ใช่ python3 ของระบบ) ซึ่งมองไม่เห็น ROS package ของระบบ
+# ถ้าขาดจะเจอ: ModuleNotFoundError: No module named 'catkin_pkg'
 #
-# micro_ros_platformio builds libmicroros from source using PlatformIO's
-# bundled Python at ~/.platformio/penv -- NOT the system python3. That
-# venv cannot see system-wide ROS packages, so the build dies with:
-#
-#     ModuleNotFoundError: No module named 'catkin_pkg'
-#
-# empy must be 3.3.x: the message generators use the old empy API and
-# empy 4.x changed it, which fails later and far less clearly.
-pio system info >/dev/null 2>&1 || true   # first run creates the penv
+# empy ต้องเป็น 3.3.x เพราะ message generator ใช้ API เก่า ซึ่ง empy 4.x เปลี่ยนไปแล้ว
+pio system info >/dev/null 2>&1 || true   # รันครั้งแรกจะสร้าง penv
 
 PENV_PY="${HOME}/.platformio/penv/bin/python"
 if [ -x "${PENV_PY}" ]; then
@@ -135,8 +123,8 @@ fi
 #  micro-ROS agent
 # ---------------------------------------------------------------
 echo "==> micro-ROS agent (${WANT_DISTRO})"
-# No apt package exists for the agent, so it is built from source.
-# A few minutes, once per machine. No docker involved.
+# agent ไม่มี package ใน apt จึงต้อง build จาก source
+# ใช้เวลาไม่กี่นาที ทำครั้งเดียวต่อเครื่อง ไม่ต้องใช้ docker
 if [ -x "${AGENT_WS}/install/micro_ros_agent/lib/micro_ros_agent/micro_ros_agent" ]; then
     echo "    already built at ${AGENT_WS}, skipping"
 else
@@ -150,8 +138,8 @@ else
             "${AGENT_WS}/src/micro_ros_setup"
     fi
 
-    # Its own workspace, deliberately. Inside ros2_ws, every `colcon
-    # build` a student runs would rebuild the agent too.
+    # แยก workspace ของ agent โดยเจตนา ถ้าอยู่ใน ros2_ws
+    # ทุกครั้งที่นักเรียนรัน `colcon build` จะ build agent ใหม่ด้วย
     (
         set -e
         set +u

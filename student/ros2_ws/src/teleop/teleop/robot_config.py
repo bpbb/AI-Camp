@@ -1,8 +1,8 @@
-"""Read ROBOT_ID from firmware/include/config.h.
+"""อ่าน ROBOT_ID จาก firmware/include/config.h
 
-The robot and the computer must agree on the name, so it lives in one
-place. `colcon build` copies config.h into this package (see setup.py);
-change it, then build again.
+หุ่นยนต์และคอมพิวเตอร์ต้องใช้ชื่อเดียวกัน จึงเก็บไว้ที่เดียว
+`colcon build` จะคัดลอก config.h เข้ามาใน package นี้ (ดู setup.py)
+แก้ไขแล้วต้อง build ใหม่
 """
 import os
 import re

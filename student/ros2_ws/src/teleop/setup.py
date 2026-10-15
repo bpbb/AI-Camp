@@ -14,8 +14,8 @@ setup(
         ('share/' + package_name, ['package.xml']),
         (os.path.join('share', package_name, 'launch'),
             glob('launch/*.launch.py')),
-        # ROBOT_ID is read from here, so the robot and the computer
-        # always agree on the name.
+        # ROBOT_ID ถูกอ่านจากไฟล์นี้ เพื่อให้หุ่นยนต์และคอมพิวเตอร์
+        # ใช้ชื่อเดียวกันเสมอ
         ('share/' + package_name, glob('../../../firmware/include/config.h')),
     ],
     install_requires=['setuptools'],

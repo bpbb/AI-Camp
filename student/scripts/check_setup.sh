@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# Confirms this machine matches the reference setup.
+# ตรวจว่าเครื่องนี้ตั้งค่าตรงกับเครื่องต้นแบบ
 #
 #   ./scripts/check_setup.sh
 #
-# Works on Ubuntu 24.04 (Jazzy) and 22.04 (Humble). Every machine of the
-# same kind should give an identical report. Run it after imaging, and
-# again on the morning of a lesson -- it catches the three things that
-# drift: the IP address, group membership, and a stopped broker.
+# ใช้ได้กับ Ubuntu 24.04 (Jazzy) และ 22.04 (Humble)
+# ควรรันหลังลง image และทุกเช้าก่อนเรียน เพื่อจับสิ่งที่มักเปลี่ยน:
+# IP address, สมาชิกกลุ่ม dialout และ broker ที่หยุดทำงาน
 
 PLATFORMIO_VERSION="6.1.16"
 AGENT_WS="${HOME}/microros_agent_ws"
@@ -20,7 +19,7 @@ note() { printf '       %s\n' "$1"; }
 echo "checking this machine"
 echo
 
-# ---- operating system, and which ROS belongs on it ----
+# ---- ระบบปฏิบัติการ และ ROS ที่ควรใช้ ----
 . /etc/os-release
 case "${VERSION_ID}" in
     24.04) WANT_DISTRO="jazzy" ;;
@@ -53,7 +52,7 @@ fi
 command -v colcon >/dev/null && ok "colcon" || bad "colcon missing"
 
 # ---- python ----
-# Any paho works: the nodes handle both the 1.x and 2.x constructors.
+# paho เวอร์ชันใดก็ได้: node รองรับ constructor ทั้งแบบ 1.x และ 2.x
 got=$(python3 -c 'import paho.mqtt as p; print(p.__version__)' 2>/dev/null)
 if [ -n "$got" ]; then
     ok "paho-mqtt ${got}"
@@ -62,8 +61,8 @@ else
     note "sudo apt install python3-paho-mqtt"
 fi
 
-# The PlatformIO VS Code extension needs this to build its virtualenv.
-# Without it the extension claims Python is missing, which it is not.
+# PlatformIO extension ของ VS Code ต้องใช้ python3-venv เพื่อสร้าง venv
+# ถ้าไม่มี extension จะแจ้งว่าหา Python ไม่เจอ (ซึ่งไม่จริง)
 if python3 -m venv --help >/dev/null 2>&1 && \
    python3 -c 'import ensurepip' >/dev/null 2>&1; then
     ok "python3-venv"
@@ -82,10 +81,10 @@ else
     note "it lives in ~/.local/bin -- is that in your PATH?"
 fi
 
-# ---- ROS build tools inside PlatformIO's venv ----
-# micro_ros_platformio compiles libmicroros with PlatformIO's own Python,
-# which cannot see system-wide ROS packages. Missing these fails the
-# firmware build with "No module named 'catkin_pkg'".
+# ---- ROS build tools ใน venv ของ PlatformIO ----
+# micro_ros_platformio คอมไพล์ libmicroros ด้วย Python ของ PlatformIO เอง
+# ซึ่งมองไม่เห็น ROS package ของระบบ ถ้าขาดจะ build firmware ไม่ผ่าน
+# ด้วย error "No module named 'catkin_pkg'"
 PENV_PY="${HOME}/.platformio/penv/bin/python"
 if [ -x "${PENV_PY}" ]; then
     missing=""
@@ -132,7 +131,7 @@ else
     note "./scripts/setup_pc.sh   (a few minutes, once per machine)"
 fi
 
-# ---- serial port access ----
+# ---- สิทธิ์เข้าถึง serial port ----
 if id -nG | grep -qw dialout; then
     ok "user is in the dialout group"
 else
@@ -140,7 +139,7 @@ else
     note "sudo usermod -aG dialout \$USER   then log out and back in"
 fi
 
-# ---- the firmware must target the same distro as the computer ----
+# ---- firmware ต้องใช้ distro เดียวกับคอมพิวเตอร์ ----
 PIO_INI="$(dirname "$0")/../firmware/platformio.ini"
 if [ -f "${PIO_INI}" ] && [ -n "${FOUND_DISTRO}" ]; then
     pio_distro=$(grep -oP 'board_microros_distro\s*=\s*\K\w+' "${PIO_INI}" 2>/dev/null | head -1)
@@ -153,7 +152,7 @@ if [ -f "${PIO_INI}" ] && [ -n "${FOUND_DISTRO}" ]; then
     fi
 fi
 
-# ---- the bit that changes on its own ----
+# ---- ส่วนที่เปลี่ยนได้เอง (IP address) ----
 echo
 ip=$(hostname -I | awk '{print $1}')
 echo "this machine's address: ${ip:-none}"

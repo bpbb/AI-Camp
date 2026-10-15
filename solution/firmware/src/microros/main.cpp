@@ -52,17 +52,8 @@ void onCmdVel(const void *msgin) {
 
   // A Twist describes motion in 3D, but a wheeled robot on a floor
   // can only do two of those: drive along x, and turn about z.
-  // STUDENT-BEGIN
-  // TODO(student) 2/4 -- lesson 5: make the robot obey the Twist.
-  //   Forward speed is m->linear.x, turning speed is m->angular.z.
-  //   1. Pass them to drive() (see motor.h).
-  //   2. Set lastCommand = millis(); so the safety timeout in loop()
-  //      knows a command just arrived. Forget it and the robot stops
-  //      half a second after every message.
-  // STUDENT-STUB: (void)m;   // delete this line once you use m
   drive(m->linear.x, m->angular.z);
   lastCommand = millis();
-  // STUDENT-END
 }
 
 // Called once a second by a ROS 2 timer. Publishes a counter so you

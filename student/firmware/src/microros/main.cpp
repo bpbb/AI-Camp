@@ -1,16 +1,12 @@
 // ============================================================
-//  LESSON 5 -- The ESP32 becomes a real ROS 2 node
+//  บทที่ 5 -- ESP32 กลายเป็น ROS 2 node จริง
 //
-//  Same robot, same motors, same drive() function as the motor test.
-//  The only thing that changes is where the numbers come from.
+//  ใช้หุ่น มอเตอร์ และ drive() เหมือน motor test ต่างกันแค่ที่มาของคำสั่ง
+//  เหมือน listener ในบทที่ 2: node ที่ subscribe topic (/cmd_vel)
+//  จะเห็นได้ใน `ros2 node list` และ rqt_graph
 //
-//  In lesson 2 you wrote a listener that waited on /chatter. This is
-//  the same thing: a node that subscribes to a topic. It shows up in
-//  `ros2 node list`, it subscribes to /cmd_vel like any other robot,
-//  and rqt_graph draws it next to your computer's nodes.
-//
-//  Run the agent on the computer first:
-//    ./scripts/start_agent.sh        (listens on AGENT_PORT, 8888)
+//  รัน agent บนคอมพิวเตอร์ก่อน:
+//    ./scripts/start_agent.sh        (รอรับที่ AGENT_PORT, 8888)
 // ============================================================
 #include <Arduino.h>
 #include <micro_ros_platformio.h>
@@ -42,27 +38,25 @@ unsigned long lastCommand = 0;
 unsigned long lastPing = 0;
 
 // ============================================================
-//  THE PART THAT MATTERS
-//  Everything below this block is plumbing.
+//  ส่วนที่ต้องเขียน
+//  โค้ดหลังจากนี้เป็นส่วนเชื่อมต่อระบบ
 // ============================================================
 
-// Called every time someone publishes to /cmd_vel.
+// ถูกเรียกทุกครั้งที่มีการ publish มาที่ /cmd_vel
 void onCmdVel(const void *msgin) {
   const geometry_msgs__msg__Twist *m = (const geometry_msgs__msg__Twist *)msgin;
 
-  // A Twist describes motion in 3D, but a wheeled robot on a floor
-  // can only do two of those: drive along x, and turn about z.
-  // TODO(student) 2/4 -- lesson 5: make the robot obey the Twist.
-  //   Forward speed is m->linear.x, turning speed is m->angular.z.
-  //   1. Pass them to drive() (see motor.h).
-  //   2. Set lastCommand = millis(); so the safety timeout in loop()
-  //      knows a command just arrived. Forget it and the robot stops
-  //      half a second after every message.
-  (void)m;   // delete this line once you use m
+  // Twist บอกการเคลื่อนที่ 3 มิติ แต่หุ่นล้อใช้แค่ 2 ค่า: วิ่งตามแกน x และหมุนรอบแกน z
+  // TODO(student) 2/4 -- บทที่ 5: ให้หุ่นทำตาม Twist
+  //   ความเร็วเดินหน้าคือ m->linear.x ความเร็วเลี้ยวคือ m->angular.z
+  //   1. ส่งค่าทั้งสองให้ drive() (ดู motor.h)
+  //   2. ตั้ง lastCommand = millis(); ให้ safety timeout ใน loop() รู้ว่ามีคำสั่งเข้ามา
+  //      ถ้าลืม หุ่นจะหยุดหลังทุกคำสั่งครึ่งวินาที
+  (void)m;   // ลบบรรทัดนี้เมื่อใช้ m แล้ว
 }
 
-// Called once a second by a ROS 2 timer. Publishes a counter so you
-// can prove the link works with `ros2 topic echo /heartbeat`.
+// ROS 2 timer เรียกทุก 1 วินาที เพื่อ publish ตัวนับ
+// ตรวจการเชื่อมต่อได้ด้วย `ros2 topic echo /heartbeat`
 void onBeatTimer(rcl_timer_t *timer, int64_t) {
   if (timer == NULL) return;
   beatMsg.data++;
@@ -70,11 +64,10 @@ void onBeatTimer(rcl_timer_t *timer, int64_t) {
 }
 
 // ============================================================
-//  PLUMBING -- you don't need to change anything below here.
+//  ส่วนเชื่อมต่อระบบ -- ไม่ต้องแก้ไขโค้ดด้านล่าง
 //
-//  The extra complexity is reconnection. If the agent restarts, or
-//  WiFi drops, a naive sketch stays dead until you press reset. The
-//  state machine below notices and rebuilds the node by itself.
+//  state machine ด้านล่างสร้าง node ใหม่เองเมื่อ agent restart
+//  หรือ WiFi หลุด โดยไม่ต้องกด reset
 // ============================================================
 
 #define RCCHECK(fn) { if ((fn) != RCL_RET_OK) return false; }
@@ -85,9 +78,8 @@ State state = WAITING_AGENT;
 bool createEntities() {
   allocator = rcl_get_default_allocator();
 
-  // Join the same ROS 2 domain as your computer. Without this every robot
-  // in the room lands on domain 0 together and they all answer to the
-  // same /cmd_vel.
+  // เข้า ROS 2 domain เดียวกับคอมพิวเตอร์ ถ้าไม่ตั้ง หุ่นทุกตัวจะอยู่ domain 0
+  // และรับคำสั่ง /cmd_vel เดียวกันหมด
   rcl_init_options_t initOptions = rcl_get_zero_initialized_init_options();
   RCCHECK(rcl_init_options_init(&initOptions, allocator));
   RCCHECK(rcl_init_options_set_domain_id(&initOptions, ROS_DOMAIN_ID));
@@ -108,8 +100,8 @@ bool createEntities() {
   RCCHECK(rclc_timer_init_default(&beatTimer, &support,
                                   RCL_MS_TO_NS(1000), onBeatTimer));
 
-  // "2" = how many things the executor has to watch: the subscription
-  // and the timer. Get this number wrong and one of them never fires.
+  // "2" = จำนวนสิ่งที่ executor ต้องดูแล: subscription และ timer
+  // ถ้าใส่เลขผิด จะมีตัวใดตัวหนึ่งไม่ทำงาน
   RCCHECK(rclc_executor_init(&executor, &support.context, 2, &allocator));
   RCCHECK(rclc_executor_add_subscription(&executor, &cmdSub, &cmdMsg,
                                          &onCmdVel, ON_NEW_DATA));
@@ -136,10 +128,9 @@ void setup() {
   motorSetup();
   stopMotors();
 
-  // This one line replaces all the transport code you would write by
-  // hand on an STM32: it joins the WiFi and points micro-ROS at the agent.
-  // The line after this waits for WiFi forever, silently. Say what we
-  // can see first, so a wrong name or a 5 GHz-only network is obvious.
+  // set_microros_wifi_transports() เชื่อม WiFi และชี้ micro-ROS ไปที่ agent
+  // แต่จะรอ WiFi เงียบ ๆ ไม่มีกำหนด จึงแสดงเครือข่ายที่เห็นก่อน
+  // เพื่อให้รู้ทันทีถ้าชื่อผิดหรือเป็นเครือข่าย 5 GHz อย่างเดียว
   WiFi.mode(WIFI_STA);
   int found = WiFi.scanNetworks();
   bool seen = false;
@@ -156,20 +147,20 @@ void setup() {
   set_microros_wifi_transports(WIFI_SSID, WIFI_PASSWORD, agent, AGENT_PORT);
 
   Serial.printf("wifi: ok, my IP is %s\n", WiFi.localIP().toString().c_str());
-  delay(2000);   // let WiFi actually associate before we talk to the agent
+  delay(2000);   // รอให้ WiFi เชื่อมต่อเสร็จก่อนคุยกับ agent
 }
 
 void loop() {
   switch (state) {
     case WAITING_AGENT:
-      // Knock on the agent's door once a second until it answers.
-      // School/guest WiFi can take 250 ms+ per round trip, so be patient.
+      // ping agent ซ้ำจนกว่าจะตอบ
+      // WiFi โรงเรียน/guest อาจใช้เวลา 250 ms+ ต่อรอบ
       if (rmw_uros_ping_agent(500, 1) == RMW_RET_OK) {
         state = createEntities() ? AGENT_CONNECTED : WAITING_AGENT;
         if (state == AGENT_CONNECTED) Serial.println("agent: connected");
       } else {
         stopMotors();
-        // Say what we're waiting for, so a silent monitor isn't a mystery.
+        // แสดงสถานะว่ากำลังรออะไร
         if (WiFi.status() != WL_CONNECTED) {
           Serial.printf("wifi: not connected to \"%s\" yet\n", WIFI_SSID);
         } else {
@@ -181,12 +172,11 @@ void loop() {
       break;
 
     case AGENT_CONNECTED:
-      // Check every so often that the agent is still there. Not every
-      // loop: each ping is a WiFi round trip that delays /cmd_vel.
+      // ตรวจเป็นระยะว่า agent ยังอยู่ (ไม่ทำทุก loop เพราะแต่ละ ping
+      // ใช้เวลาไป-กลับผ่าน WiFi และทำให้ /cmd_vel ช้า)
       if (millis() - lastPing > 500) {
         lastPing = millis();
-        // Only give up after 5 missed pings in a row (~2.5 s). A reply
-        // returns at once, so this only waits when the link is really bad.
+        // ถือว่าหลุดเมื่อ ping ไม่ตอบ 5 ครั้งติดกัน (~2.5 s)
         if (rmw_uros_ping_agent(500, 5) != RMW_RET_OK) {
           Serial.println("agent: lost");
           state = AGENT_DISCONNECTED;
@@ -195,7 +185,7 @@ void loop() {
       }
       rclc_executor_spin_some(&executor, RCL_MS_TO_NS(10));
 
-      // No recent command, no motion. See COMMAND_TIMEOUT_MS in config.h.
+      // ไม่มีคำสั่งใหม่ = หยุด ดู COMMAND_TIMEOUT_MS ใน config.h
       if (millis() - lastCommand > COMMAND_TIMEOUT_MS) stopMotors();
       break;
 

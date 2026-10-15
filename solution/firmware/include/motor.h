@@ -87,19 +87,9 @@ inline void setMotor(int in1, int in2, int pwmPin, int ch, float speed) {
 //  function -- the motor test, micro-ROS and MQTT all alike.
 // ============================================================
 inline void drive(float lin, float ang) {
-  // STUDENT-BEGIN
-  // TODO(student) 1/4 -- lesson 4: turn (lin, ang) into two wheel speeds.
-  //   Going straight, both wheels run at lin.
-  //   Turning left (ang > 0), the right wheel goes faster and the left
-  //   slower, each by ang * WHEEL_BASE / 2.
-  //   Check with WHEEL_BASE 0.15:
-  //     lin=0.1, ang=0  ->  left= 0.10, right=0.10   (straight)
-  //     lin=0,   ang=2  ->  left=-0.15, right=0.15   (spin left)
-  // STUDENT-STUB: float left  = 0.0f;   // <- your formula here
-  // STUDENT-STUB: float right = 0.0f;   // <- your formula here
+  // Turning means one wheel goes faster and the other slower.
   float left  = lin - ang * WHEEL_BASE / 2.0f;
   float right = lin + ang * WHEEL_BASE / 2.0f;
-  // STUDENT-END
 
   // If we asked for more than the motors can do, scale BOTH down by
   // the same amount. Clipping them separately would bend the path.

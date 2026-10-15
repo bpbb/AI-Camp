@@ -1,33 +1,28 @@
 // ============================================================
-//  LESSON 4 -- Does the hardware work?
+//  บทที่ 4 -- ทดสอบ hardware
 //
-//  No WiFi. No broker. No ROS 2. Nothing but the motors.
+//  ไม่มี WiFi, broker หรือ ROS 2 ทดสอบเฉพาะมอเตอร์
+//  หาข้อผิดพลาดการต่อสายตอนนี้ ก่อนบทถัดไปเพิ่มระบบเครือข่าย
+//  ซึ่งทำให้หาสาเหตุได้ยากขึ้นมาก
 //
-//  The point is to find wiring mistakes now, while there is only
-//  one thing that can be wrong. Every later lesson adds a network,
-//  and a robot that doesn't move is much harder to diagnose once
-//  there are five things in the chain instead of one.
-//
-//  Put the robot ON A BOOK so the wheels spin in the air. It will
-//  drive off the table otherwise.
+//  วางหุ่นบนหนังสือให้ล้อลอยจากพื้น ไม่เช่นนั้นหุ่นจะวิ่งตกโต๊ะ
 // ============================================================
 #include <Arduino.h>
 
 #include "config.h"
 #include "motor.h"
 
-// Each step: a label, how to move, and for how long.
+// แต่ละขั้น: ชื่อ, การเคลื่อนที่ และระยะเวลา
 struct Step {
   const char *label;
-  float lin;     // m/s forward
-  float ang;     // rad/s turning
+  float lin;     // m/s เดินหน้า
+  float ang;     // rad/s เลี้ยว
   int ms;
 };
 
 const Step STEPS[] = {
-  // Turning hard enough that one wheel lands on exactly zero, so each
-  // wheel can be checked on its own. Positive ang turns LEFT, which
-  // means the RIGHT wheel is the one that moves.
+  // เลี้ยวพอดีให้ล้อหนึ่งความเร็วเป็นศูนย์ เพื่อตรวจทีละล้อ
+  // ang ค่าบวก = เลี้ยวซ้าย ล้อที่หมุนคือล้อขวา
   {"LEFT wheel forward   (right should be still)",  0.10f, -1.333f, 2000},
   {"LEFT wheel backward",                          -0.10f,  1.333f, 2000},
   {"RIGHT wheel forward  (left should be still)",   0.10f,  1.333f, 2000},

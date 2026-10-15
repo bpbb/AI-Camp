@@ -1,18 +1,16 @@
 """
-Lessons 6 and 7 -- the MQTT gateway.
+บทที่ 6 และ 7 -- MQTT gateway
 
     ros2 launch teleop mqtt_gateway.launch.py
 
-Subscribes to MQTT and publishes /cmd_vel, so anything that can speak
-MQTT -- a terminal in lesson 6, a phone in lesson 7 -- can drive the
-robot. The robot keeps its micro-ROS firmware from lesson 5, so start
-the agent separately first:
+subscribe MQTT แล้ว publish /cmd_vel ให้ขับหุ่นยนต์ผ่าน MQTT ได้
+(terminal ในบทที่ 6, มือถือในบทที่ 7) หุ่นยนต์ยังใช้ firmware micro-ROS
+จากบทที่ 5 จึงต้องเปิด agent แยกก่อน:
 
     ./scripts/start_agent.sh
 
-Add key_teleop in another terminal if you want to drive from both the
-keyboard and MQTT at the same time -- they both publish to /cmd_vel,
-and the robot does not care which one it hears.
+เปิด key_teleop ในอีก terminal ได้ถ้าต้องการขับทั้งคีย์บอร์ดและ MQTT พร้อมกัน
+(ทั้งคู่ publish ไปที่ /cmd_vel)
 """
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument

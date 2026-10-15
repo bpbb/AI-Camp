@@ -68,13 +68,8 @@ class KeyTeleop(Node):
 
     def tick(self):
         msg = Twist()
-        # STUDENT-BEGIN
-        # TODO(student) 3/4 -- lesson 5: put our speeds into the message.
-        #   self.lin goes in msg.linear.x, self.ang in msg.angular.z.
-        #   Leave them out and the robot receives all zeros: it never moves.
         msg.linear.x = self.lin
         msg.angular.z = self.ang
-        # STUDENT-END
         self.pub.publish(msg)
 
     def handle_key(self, key):
@@ -84,13 +79,6 @@ class KeyTeleop(Node):
             self.lin = 0.0
             self.ang = 0.0
 
-        # STUDENT-BEGIN
-        # TODO(student) 4/4 -- lesson 5: make w/s/a/d change the speeds.
-        #   w faster forward, s slower/backwards  -> change self.lin
-        #   a turn left,      d turn right        -> change self.ang
-        #   Use step() from the top of this file, for example:
-        #       self.lin = step(self.lin, LINEAR_STEP, LINEAR_MIN, LINEAR_MAX)
-        #   s and d go the other way: use -LINEAR_STEP and -ANGULAR_STEP.
         if key == 'w':
             self.lin = step(self.lin, LINEAR_STEP, LINEAR_MIN, LINEAR_MAX)
         elif key == 's':
@@ -99,7 +87,6 @@ class KeyTeleop(Node):
             self.ang = step(self.ang, ANGULAR_STEP, ANGULAR_MIN, ANGULAR_MAX)
         elif key == 'd':
             self.ang = step(self.ang, -ANGULAR_STEP, ANGULAR_MIN, ANGULAR_MAX)
-        # STUDENT-END
 
         self.get_logger().info(f'lin={self.lin:+.2f}  ang={self.ang:+.2f}')
         return True

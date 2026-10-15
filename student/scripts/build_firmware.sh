@@ -1,23 +1,14 @@
 #!/usr/bin/env bash
-# Build or upload the ESP32 firmware in a clean environment.
+# Build หรือ upload firmware ของ ESP32 ใน environment ที่สะอาด
 #
 #   ./scripts/build_firmware.sh motortest
 #   ./scripts/build_firmware.sh microros upload
 #   ./scripts/build_firmware.sh microros monitor
 #
-# Why this exists
-# ---------------
-# Lesson 1 tells you to put `source /opt/ros/<distro>/setup.bash` in your
-# ~/.bashrc, because you need ROS 2 in every terminal. That is correct
-# for everything except this one job.
-#
-# The micro-ROS firmware build compiles its own private copy of the ROS
-# build tools. If a real ROS workspace is sourced, its AMENT_PREFIX_PATH
-# and CMAKE_PREFIX_PATH leak in, CMake finds the wrong packages, and the
-# build fails with errors about rosidl_runtime_cpp that point at a
-# workspace which has nothing to do with this project.
-#
-# So this script strips the ROS variables back out before calling pio.
+# การ build firmware ของ micro-ROS จะคอมไพล์ ROS build tools ชุดของตัวเอง
+# ถ้า source ROS 2 ไว้ (เช่นใน ~/.bashrc) ตัวแปร AMENT_PREFIX_PATH/CMAKE_PREFIX_PATH
+# จะปนเข้ามา ทำให้ CMake หา package ผิดและ build ล้มเหลว
+# จึงต้องล้างตัวแปร ROS ออกก่อนเรียก pio
 set -eo pipefail
 
 ENV_NAME="${1:-motortest}"

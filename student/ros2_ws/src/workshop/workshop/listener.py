@@ -1,21 +1,20 @@
 #!/usr/bin/env python3
 """
-LESSON 2 -- a subscriber.
+บทที่ 2 -- subscriber
 
-It waits on a topic and reacts to whatever turns up.
+รอรับ message จาก topic แล้วตอบสนองเมื่อมี message เข้ามา
 
     ros2 run workshop listener
 
-Start this one FIRST, before the talker. Nothing happens -- it just
-waits. Now start the talker in another terminal and watch them find
-each other with no configuration at all.
+รันตัวนี้ก่อน talker จะยังไม่มีอะไรเกิดขึ้น (แค่รอ) จากนั้นรัน talker
+ในอีก terminal แล้วดูว่าทั้งสองเจอกันเองโดยไม่ต้องตั้งค่าใดๆ
 """
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import String
 
-# Must match the talker's TOPIC. Change one and not the other,
-# and they stop hearing each other -- a good mistake to make on purpose.
+# ต้องตรงกับ TOPIC ของ talker ถ้าแก้ฝั่งเดียว ทั้งสองจะไม่ได้ยินกัน
+# (ลองทำผิดแบบนี้ดูโดยตั้งใจ)
 TOPIC = 'chatter'
 
 
@@ -23,8 +22,8 @@ class Listener(Node):
     def __init__(self):
         super().__init__('listener')
 
-        # The last argument is the function to run for every message.
-        # We never call on_message ourselves -- ROS 2 calls it for us.
+        # argument สุดท้ายคือ callback ที่จะถูกเรียกทุกครั้งที่มี message
+        # เราไม่ได้เรียก on_message เอง ROS 2 เป็นผู้เรียกให้
         self.create_subscription(String, TOPIC, self.on_message, 10)
 
         self.get_logger().info(f'listening on /{TOPIC} ... (nothing yet)')

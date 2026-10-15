@@ -1,11 +1,10 @@
 """
-Lesson 5 -- drive the micro-ROS robot.
+บทที่ 5 -- ขับหุ่นยนต์ micro-ROS
 
     ros2 launch teleop microros_teleop.launch.py
 
-No bridge this time. The ESP32 subscribes to /cmd_vel itself, so the
-keyboard node talks to it directly. Start the agent in another
-terminal first:
+ไม่มี bridge: ESP32 subscribe /cmd_vel เอง node คีย์บอร์ดจึงคุยกับมันโดยตรง
+ให้เปิด agent ในอีก terminal ก่อน:
 
     ./scripts/start_agent.sh
 """
