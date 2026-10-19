@@ -1,0 +1,7 @@
+# ผล build (Vercel build ใหม่เองทุกครั้ง)
+public/
+# ไฟล์เชื่อมกับ Vercel ในเครื่อง (มี token ห้าม commit)
+.vercel/
+.env*
+.venv/
+__pycache__/

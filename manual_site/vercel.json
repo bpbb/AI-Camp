@@ -1,0 +1,17 @@
+{
+  "framework": null,
+  "installCommand": "python3 -m venv .venv && .venv/bin/pip install -r requirements.txt",
+  "buildCommand": ".venv/bin/python tools/build_docs.py public",
+  "outputDirectory": "public",
+  "cleanUrls": true,
+  "redirects": [
+    { "source": "/manual", "destination": "/", "permanent": false },
+    { "source": "/slides", "destination": "/", "permanent": false }
+  ],
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Robots-Tag", "value": "noindex" },
+      { "key": "X-Content-Type-Options", "value": "nosniff" }
+    ] }
+  ]
+}
