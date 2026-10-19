@@ -56,6 +56,18 @@ rm -rf firmware/.pio
 Code ด้วยคำสั่ง `code .` จาก terminal ที่โหลด ROS ไว้ ให้เปิดจาก
 เมนู applications แทน หรือใช้ script ในการ build
 
+## micro-ROS firmware: "cannot open .../.platformio/penv/bin/activate"
+
+library ของ micro-ROS จะ build ภายใน `~/.platformio/penv` เสมอ และเครื่องนี้
+ยังไม่มี venv ดังกล่าว (เนื่องจากติดตั้ง PlatformIO ด้วยวิธีอื่น เช่น pipx)
+ให้รันสคริปต์ setup อีกครั้ง สคริปต์จะสร้าง venv และย้าย PlatformIO ไปไว้ที่นั่น:
+
+```bash
+bash scripts/setup_pc.sh
+```
+
+จากนั้นลบ `firmware/.pio` เพื่อไม่ให้ใช้ผล build ที่ล้มเหลวซ้ำ แล้ว build ใหม่
+
 ## micro-ROS firmware: "No module named 'catkin_pkg'"
 
 การ build ในบทที่ 5 เป็นการคอมไพล์ micro-ROS จาก source ผ่าน
@@ -64,20 +76,21 @@ Code ด้วยคำสั่ง `code .` จาก terminal ที่โห�
 แยกต่างหาก ดังนี้
 
 ```bash
-~/.platformio/penv/bin/python -m pip install catkin_pkg "empy==3.3.4" lark
+bash scripts/setup_pc.sh      # ติดตั้งลงใน Python ที่ถูกต้องให้อัตโนมัติ
 ```
 
-`scripts/setup_pc.sh` ดำเนินการขั้นตอนนี้ไว้แล้ว ปัญหานี้จะเกิดขึ้นเฉพาะกรณีที่
-ติดตั้ง PlatformIO ด้วยตนเอง
+Python ที่ใช้ขึ้นอยู่กับวิธีติดตั้ง PlatformIO (pipx บน Ubuntu 24.04,
+Python ของระบบบน 22.04 หรือ venv ของ VS Code extension) จึงให้สคริปต์
+setup เป็นผู้ตรวจสอบและติดตั้ง ซึ่งสามารถรันซ้ำได้อย่างปลอดภัย
 
 จำเป็นต้องระบุเวอร์ชันของ `empy` ให้ตรงตามที่กำหนด เนื่องจากตัว generate message ของ ROS 2 ใช้ API ของ
 empy 3.x ขณะที่ empy 4.x มีการเปลี่ยนแปลง API หากติดตั้งโดยไม่ระบุเวอร์ชัน
 การ build จะล้มเหลวในขั้นตอนถัดไป และวิเคราะห์สาเหตุได้ยากกว่า
 
-ตรวจสอบ package ที่ติดตั้งใน venv ด้วยคำสั่งต่อไปนี้
+ตรวจสอบด้วยคำสั่งต่อไปนี้
 
 ```bash
-~/.platformio/penv/bin/python -m pip list | grep -Ei 'catkin|empy|lark'
+./scripts/check_setup.sh      # ตรวจสอบ Python ที่รัน pio
 ```
 
 หลังแก้ไขส่วนนี้ ให้ลบ `firmware/.pio/` แล้ว build ใหม่
@@ -100,6 +113,27 @@ rm -rf firmware/.pio                         # ลบทั้งหมด
 `clean` จะคงไว้ซึ่ง library ของ micro-ROS และเวอร์ชันของ ROS 2 ถูก
 build ฝังอยู่ใน library ดังกล่าว ดังนั้นหลังการเปลี่ยน distro การใช้ `clean`
 จะไม่มีผล ต้องลบ `.pio` เท่านั้น
+
+## `Permission denied` เมื่อรัน `./scripts/...`
+
+สคริปต์ไม่มีสิทธิ์ในการรัน (execute permission) ซึ่งเกิดขึ้นเมื่อคัดลอกโปรเจกต์
+ผ่าน USB drive, ไฟล์ ZIP หรือ cloud drive ให้กำหนดสิทธิ์ใหม่จากโฟลเดอร์โปรเจกต์:
+
+```bash
+chmod +x scripts/*.sh
+```
+
+หรือรันผ่าน `bash` โดยตรง เช่น `bash scripts/setup_pc.sh`
+
+## `PlatformIO (pio) not found` หรือ `env: 'pio': No such file or directory`
+
+ยังไม่ได้ติดตั้ง PlatformIO ซึ่งมักเกิดจาก `setup_pc.sh` หยุดทำงานกลางคัน
+(เช่น จาก error ของ apt) ให้แก้ไข error นั้นก่อน แล้วรันสคริปต์อีกครั้ง
+สคริปต์จะข้ามขั้นตอนที่ทำเสร็จแล้ว:
+
+```bash
+./scripts/setup_pc.sh
+```
 
 <a id="the-board-wont-upload"></a>
 ## ไม่สามารถ upload ไปยังบอร์ดได้

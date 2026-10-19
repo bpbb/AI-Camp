@@ -5,8 +5,8 @@
 #pragma once
 
 // ---- WiFi ของคุณ ----
-#define WIFI_SSID      "MyNetwork"
-#define WIFI_PASSWORD  "changeme"
+#define WIFI_SSID      "TP-Link_3980"
+#define WIFI_PASSWORD  "65869383"
 
 // ---- ชื่อหุ่นยนต์ (บทที่ 6-7) ----
 // โทรศัพท์สั่งงานผ่าน MQTT topic robot/<ROBOT_ID>/cmd ให้ใช้ชื่อทีม
@@ -14,14 +14,14 @@
 #define ROBOT_ID       "robot1"
 
 // ---- micro-ROS agent: IP ของคอมพิวเตอร์ (`hostname -I`) ----
-#define AGENT_IP       "192.168.1.100"
+#define AGENT_IP       "192.168.1.29"
 #define AGENT_PORT     8888 
 
 // ---- "ช่อง" ROS 2 ของทีม ----
 // แต่ละทีมต้องใช้เลขไม่ซ้ำกัน ไม่เช่นนั้นจะสั่ง /cmd_vel ข้ามหุ่นกัน
 // ใช้เลขที่ผู้สอนกำหนด และตั้งค่าเดียวกันบนคอมพิวเตอร์:
 //     export ROS_DOMAIN_ID=<number>
-#define ROS_DOMAIN_ID  0
+#define ROS_DOMAIN_ID  15
 
 // ---- ความปลอดภัย ----
 // ถ้าไม่มีคำสั่งเข้ามาภายในเวลานี้ ให้หยุดมอเตอร์

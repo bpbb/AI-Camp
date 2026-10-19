@@ -10,6 +10,9 @@
 # ไม่ใช้ `set -u` เพราะการ source ROS setup script จะล้มเหลว
 set -eo pipefail
 
+# คัดลอกผ่าน USB/ZIP แล้วสิทธิ์ execute หาย: กำหนดให้ทุกสคริปต์รันได้
+chmod +x "$(dirname "$0")"/*.sh
+
 PLATFORMIO_VERSION="6.1.16"
 AGENT_WS="${HOME}/microros_agent_ws"
 
@@ -88,36 +91,27 @@ sudo systemctl enable mosquitto
 # ---------------------------------------------------------------
 #  PlatformIO
 # ---------------------------------------------------------------
-echo "==> PlatformIO ${PLATFORMIO_VERSION}"
-if ls /usr/lib/python3.*/EXTERNALLY-MANAGED >/dev/null 2>&1; then
-    # Ubuntu 24.04 บังคับ PEP 668: `pip3 install --user` จะถูกปฏิเสธ
-    # จึงใช้ pipx ซึ่งสร้าง venv แยกให้แต่ละแอป (วิธีที่รองรับอย่างเป็นทางการ)
-    echo "    (PEP 668 in force -- installing with pipx)"
-    sudo apt-get install -y pipx
-    pipx install "platformio==${PLATFORMIO_VERSION}" 2>/dev/null \
-        || pipx upgrade platformio
-    pipx ensurepath >/dev/null
-else
-    pip3 install --user "platformio==${PLATFORMIO_VERSION}"
+echo "==> PlatformIO ${PLATFORMIO_VERSION} in ~/.platformio/penv"
+# micro-ROS build ด้วย ~/.platformio/penv เสมอ (ฝังไว้ใน micro_ros_platformio)
+# จึงต้องติดตั้ง PlatformIO ไว้ที่นี่ ถ้าใช้ pipx จะ error: cannot open .../penv/bin/activate
+# VS Code PlatformIO extension ใช้ venv เดียวกันนี้
+# เครื่องมือ build ต้องอยู่ใน venv นี้ด้วย (ไม่งั้น No module named 'catkin_pkg')
+# empy ต้องเป็น 3.3.x เพราะ message generator ใช้ API เวอร์ชันเก่า
+PENV="${HOME}/.platformio/penv"
+[ -x "${PENV}/bin/python" ] || python3 -m venv "${PENV}"
+"${PENV}/bin/python" -m pip install -q --upgrade pip
+[ -x "${PENV}/bin/pio" ] || "${PENV}/bin/python" -m pip install -q "platformio==${PLATFORMIO_VERSION}"
+"${PENV}/bin/python" -m pip install -q catkin_pkg "empy==3.3.4" lark
+
+# setup รุ่นก่อนติดตั้ง pio ด้วย pipx: ลบออกเพื่อให้เหลือ pio ตัวเดียว
+if command -v pipx >/dev/null && pipx list 2>/dev/null | grep -q 'package platformio'; then
+    pipx uninstall platformio >/dev/null
 fi
 
+# ให้พิมพ์ `pio` ได้ (~/.local/bin จะอยู่ใน PATH หลัง login ครั้งถัดไป)
+mkdir -p "${HOME}/.local/bin"
+ln -sf "${PENV}/bin/pio" "${HOME}/.local/bin/pio"
 export PATH="${HOME}/.local/bin:${PATH}"
-
-echo "==> ROS build tools inside PlatformIO's own virtualenv"
-# จำเป็นต้องทำ: micro_ros_platformio build libmicroros ด้วย Python ของ PlatformIO
-# ที่ ~/.platformio/penv (ไม่ใช่ python3 ของระบบ) ซึ่งมองไม่เห็น ROS package ของระบบ
-# ถ้าขาดจะเจอ: ModuleNotFoundError: No module named 'catkin_pkg'
-#
-# empy ต้องเป็น 3.3.x เพราะ message generator ใช้ API เก่า ซึ่ง empy 4.x เปลี่ยนไปแล้ว
-pio system info >/dev/null 2>&1 || true   # รันครั้งแรกจะสร้าง penv
-
-PENV_PY="${HOME}/.platformio/penv/bin/python"
-if [ -x "${PENV_PY}" ]; then
-    "${PENV_PY}" -m pip install -q "catkin_pkg" "empy==3.3.4" "lark"
-else
-    echo "    WARNING: ${PENV_PY} not found."
-    echo "    Run 'pio system info' once, then re-run this script."
-fi
 
 # ---------------------------------------------------------------
 #  micro-ROS agent

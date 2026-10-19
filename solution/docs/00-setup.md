@@ -40,9 +40,15 @@ recommended extensions -- say yes. If it doesn't, install these by hand:
 
 ## 2. Computer packages
 
+Run this from the project folder:
+
 ```bash
-./scripts/setup_pc.sh
+bash scripts/setup_pc.sh
 ```
+
+Starting it with `bash` works even if the project was copied by USB
+drive or ZIP, which lose Linux file permissions. The script then makes
+all the scripts runnable, so from here on `./scripts/...` works.
 
 This installs the MQTT broker, the Python MQTT library, and builds the
 micro-ROS agent from source -- there is no ready-made package for it.

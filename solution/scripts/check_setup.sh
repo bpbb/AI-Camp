@@ -72,42 +72,50 @@ else
     note "sudo apt install python3-venv"
 fi
 
-got=$(pio --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-if [ "$got" = "$PLATFORMIO_VERSION" ]; then
+# Same places build_firmware.sh looks: ~/.local/bin is only on PATH
+# after a new login, but the scripts find it anyway.
+PIO_BIN="$(PATH="${HOME}/.platformio/penv/bin:${HOME}/.local/bin:${PATH}" command -v pio)"
+got=$("${PIO_BIN:-pio}" --version 2>/dev/null | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+# Any 6.x is fine: the VS Code extension updates it, and the toolchain
+# itself is pinned in platformio.ini (platform = espressif32@...).
+if [ "${got%%.*}" = "6" ]; then
     ok "platformio ${got}"
 elif [ -n "$got" ]; then
-    bad "platformio ${got}, expected ${PLATFORMIO_VERSION}"
+    bad "platformio ${got}, expected 6.x"
 else
-    bad "platformio not on PATH"
-    note "it lives in ~/.local/bin -- is that in your PATH?"
+    bad "platformio not installed"
+    note "run ./scripts/setup_pc.sh"
+fi
+if [ -n "$got" ] && ! command -v pio >/dev/null; then
+    note "pio works from the scripts; to type 'pio' yourself, open a new terminal (or log out and in)"
 fi
 
-# ---- ROS build tools inside PlatformIO's venv ----
-# micro_ros_platformio compiles libmicroros with PlatformIO's own Python,
-# which cannot see system-wide ROS packages. Missing these fails the
-# firmware build with "No module named 'catkin_pkg'".
-PENV_PY="${HOME}/.platformio/penv/bin/python"
-if [ -x "${PENV_PY}" ]; then
+# ---- ROS build tools inside PlatformIO's Python ----
+# micro_ros_platformio compiles libmicroros with the Python that runs
+# PlatformIO, which cannot see system-wide ROS packages. Missing these
+# fails the firmware build with "No module named 'catkin_pkg'".
+PIO_PY="${HOME}/.platformio/penv/bin/python"   # micro-ROS always builds with this one
+if [ -x "${PIO_PY}" ]; then
     missing=""
     for mod in catkin_pkg em lark; do
-        "${PENV_PY}" -c "import ${mod}" >/dev/null 2>&1 || missing="${missing} ${mod}"
+        "${PIO_PY}" -c "import ${mod}" >/dev/null 2>&1 || missing="${missing} ${mod}"
     done
     if [ -z "${missing}" ]; then
-        ok "PlatformIO venv has the ROS build tools"
+        ok "PlatformIO's Python has the ROS build tools"
     else
-        bad "PlatformIO venv missing:${missing} -- micro-ROS firmware will not build"
-        note "${PENV_PY} -m pip install catkin_pkg empy==3.3.4 lark"
+        bad "PlatformIO's Python missing:${missing} -- micro-ROS firmware will not build"
+        note "re-run ./scripts/setup_pc.sh"
     fi
-    emv=$("${PENV_PY}" -c "import em; print(em.__version__)" 2>/dev/null)
+    emv=$("${PIO_PY}" -c "import em; print(em.__version__)" 2>/dev/null)
     case "${emv}" in
-        3.3.*) ok "PlatformIO venv empy ${emv}" ;;
+        3.3.*) ok "PlatformIO's Python empy ${emv}" ;;
         "")    : ;;
-        *)     bad "PlatformIO venv empy ${emv} -- needs 3.3.x"
-               note "${PENV_PY} -m pip install 'empy==3.3.4'" ;;
+        *)     bad "PlatformIO's Python empy ${emv} -- needs 3.3.x"
+               note "re-run ./scripts/setup_pc.sh" ;;
     esac
 else
-    bad "PlatformIO venv not created yet"
-    note "run 'pio system info' once, then ./scripts/setup_pc.sh"
+    bad "~/.platformio/penv missing -- micro-ROS firmware will not build"
+    note "run ./scripts/setup_pc.sh"
 fi
 
 # ---- mqtt broker ----

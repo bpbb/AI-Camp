@@ -87,7 +87,7 @@ battery for the motors, and check the grounds are joined
 [motor.h](../firmware/include/motor.h) don't match how you wired it --
 compare them one by one with the table in
 [03-hardware.md](03-hardware.md). Then check that wheel's three wires
-at the driver, and the ENA/ENB jumper on an L298N.
+at the driver, and that ENA/ENB is HIGH (jumper on, or wired to GPIO 14/32).
 
 ## Measure your robot
 

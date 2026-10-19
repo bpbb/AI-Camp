@@ -56,6 +56,18 @@ Same thing causes the VS Code build button to fail, if you started VS
 Code by typing `code .` in a terminal that had ROS loaded. Launch it
 from the applications menu instead, or just use the script.
 
+## micro-ROS firmware: "cannot open .../.platformio/penv/bin/activate"
+
+The micro-ROS library always builds inside `~/.platformio/penv`, and
+this PC doesn't have it (PlatformIO was installed another way, such as
+pipx). Run setup again; it creates the venv and moves PlatformIO there:
+
+```bash
+bash scripts/setup_pc.sh
+```
+
+Then delete `firmware/.pio` so the failed build isn't reused, and build again.
+
 ## micro-ROS firmware: "No module named 'catkin_pkg'"
 
 The lesson-5 build compiles micro-ROS from source, and it does that with
@@ -64,20 +76,21 @@ see ROS packages installed system-wide, so it needs its own copy of the
 build tools:
 
 ```bash
-~/.platformio/penv/bin/python -m pip install catkin_pkg "empy==3.3.4" lark
+bash scripts/setup_pc.sh      # installs them into the right Python
 ```
 
-`scripts/setup_pc.sh` does this for you; you only hit it if PlatformIO
-was installed by hand.
+Which Python that is depends on how PlatformIO was installed (pipx on
+Ubuntu 24.04, the system Python on 22.04, or the VS Code extension's own
+venv), so let the setup script work it out; running it again is safe.
 
 The `empy` pin matters. The ROS 2 message generators use the empy 3.x
 API, and empy 4.x changed it — an unpinned install fails later and much
 less clearly.
 
-Check what the venv has:
+Check:
 
 ```bash
-~/.platformio/penv/bin/python -m pip list | grep -Ei 'catkin|empy|lark'
+./scripts/check_setup.sh      # checks the Python that runs pio
 ```
 
 If you changed anything here, delete `firmware/.pio/` and build again —
@@ -100,6 +113,29 @@ rm -rf firmware/.pio                         # everything
 `clean` keeps the micro-ROS library, and the ROS 2 version is built
 into that library. So after changing the distro, `clean` changes
 nothing; only deleting `.pio` does.
+
+## `Permission denied` when running `./scripts/...`
+
+The scripts lost their execute permission, which happens when the
+project is copied by USB drive, ZIP or a cloud drive. From the project
+folder:
+
+```bash
+chmod +x scripts/*.sh
+```
+
+Or run one through `bash` directly: `bash scripts/setup_pc.sh`.
+Copying with `git clone` keeps the permission.
+
+## `PlatformIO (pio) not found` or `env: 'pio': No such file or directory`
+
+PlatformIO isn't installed, usually because `setup_pc.sh` stopped early
+(for example on an apt error). Fix that error, then run it again; it
+skips what is already done:
+
+```bash
+./scripts/setup_pc.sh
+```
 
 ## The board won't upload
 

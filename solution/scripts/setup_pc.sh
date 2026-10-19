@@ -12,6 +12,10 @@
 # No `set -u`: sourcing ROS setup scripts fails under it.
 set -eo pipefail
 
+# Copies made by USB drive or ZIP lose the execute permission. Restore it
+# for every script, so the rest can be run as ./scripts/... afterwards.
+chmod +x "$(dirname "$0")"/*.sh
+
 PLATFORMIO_VERSION="6.1.16"
 AGENT_WS="${HOME}/microros_agent_ws"
 
@@ -94,42 +98,29 @@ sudo systemctl enable mosquitto
 # ---------------------------------------------------------------
 #  PlatformIO
 # ---------------------------------------------------------------
-echo "==> PlatformIO ${PLATFORMIO_VERSION}"
-if ls /usr/lib/python3.*/EXTERNALLY-MANAGED >/dev/null 2>&1; then
-    # Ubuntu 24.04 enforces PEP 668: `pip3 install --user` is refused
-    # with "error: externally-managed-environment". pipx gives the tool
-    # its own venv, which is the supported way to install an app.
-    echo "    (PEP 668 in force -- installing with pipx)"
-    sudo apt-get install -y pipx
-    pipx install "platformio==${PLATFORMIO_VERSION}" 2>/dev/null \
-        || pipx upgrade platformio
-    pipx ensurepath >/dev/null
-else
-    pip3 install --user "platformio==${PLATFORMIO_VERSION}"
+echo "==> PlatformIO ${PLATFORMIO_VERSION} in ~/.platformio/penv"
+# micro_ros_platformio hard-codes ~/.platformio/penv: it builds micro-ROS
+# with `. ~/.platformio/penv/bin/activate`, so PlatformIO must live there
+# (pipx or pip --user installs fail with "cannot open .../penv/bin/activate").
+# This is also the venv the VS Code PlatformIO extension uses.
+# The build tools must be in that venv too, since it cannot see the
+# system's ROS packages ("No module named 'catkin_pkg'"); empy must be
+# 3.3.x because the message generators use the old empy API.
+PENV="${HOME}/.platformio/penv"
+[ -x "${PENV}/bin/python" ] || python3 -m venv "${PENV}"
+"${PENV}/bin/python" -m pip install -q --upgrade pip
+[ -x "${PENV}/bin/pio" ] || "${PENV}/bin/python" -m pip install -q "platformio==${PLATFORMIO_VERSION}"
+"${PENV}/bin/python" -m pip install -q catkin_pkg "empy==3.3.4" lark
+
+# An older setup installed pio with pipx; remove it so only one pio exists.
+if command -v pipx >/dev/null && pipx list 2>/dev/null | grep -q 'package platformio'; then
+    pipx uninstall platformio >/dev/null
 fi
 
+# `pio` on the command line (~/.local/bin is on PATH after the next login).
+mkdir -p "${HOME}/.local/bin"
+ln -sf "${PENV}/bin/pio" "${HOME}/.local/bin/pio"
 export PATH="${HOME}/.local/bin:${PATH}"
-
-echo "==> ROS build tools inside PlatformIO's own virtualenv"
-# Not obvious, and not optional.
-#
-# micro_ros_platformio builds libmicroros from source using PlatformIO's
-# bundled Python at ~/.platformio/penv -- NOT the system python3. That
-# venv cannot see system-wide ROS packages, so the build dies with:
-#
-#     ModuleNotFoundError: No module named 'catkin_pkg'
-#
-# empy must be 3.3.x: the message generators use the old empy API and
-# empy 4.x changed it, which fails later and far less clearly.
-pio system info >/dev/null 2>&1 || true   # first run creates the penv
-
-PENV_PY="${HOME}/.platformio/penv/bin/python"
-if [ -x "${PENV_PY}" ]; then
-    "${PENV_PY}" -m pip install -q "catkin_pkg" "empy==3.3.4" "lark"
-else
-    echo "    WARNING: ${PENV_PY} not found."
-    echo "    Run 'pio system info' once, then re-run this script."
-fi
 
 # ---------------------------------------------------------------
 #  micro-ROS agent

@@ -27,6 +27,13 @@ cd "$(dirname "$0")/../firmware"
 ARGS=(run -e "${ENV_NAME}")
 [ -n "${TARGET}" ] && ARGS+=(-t "${TARGET}")
 
+# pio อยู่ใน ~/.platformio/penv (ติดตั้งโดย setup_pc.sh หรือ VS Code extension)
+CLEAN_PATH="${HOME}/.platformio/penv/bin:${HOME}/.local/bin:/usr/local/bin:/usr/bin:/bin"
+if ! PATH="${CLEAN_PATH}" command -v pio >/dev/null; then
+    echo "PlatformIO (pio) not found. Run ./scripts/setup_pc.sh first." >&2
+    exit 1
+fi
+
 echo "building '${ENV_NAME}' with a clean (ROS-free) environment"
 
 exec env \
@@ -41,6 +48,6 @@ exec env \
     -u ROS_DOMAIN_ID \
     -u PYTHONPATH \
     -u LD_LIBRARY_PATH \
-    PATH="${HOME}/.local/bin:/usr/local/bin:/usr/bin:/bin" \
+    PATH="${CLEAN_PATH}" \
     HOME="${HOME}" \
     pio "${ARGS[@]}"

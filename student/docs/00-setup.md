@@ -32,9 +32,15 @@
 
 ## 2. แพ็กเกจบนคอมพิวเตอร์
 
+ให้รันคำสั่งต่อไปนี้จากโฟลเดอร์โปรเจกต์:
+
 ```bash
-./scripts/setup_pc.sh
+bash scripts/setup_pc.sh
 ```
+
+การเรียกผ่าน `bash` ใช้งานได้แม้คัดลอกโปรเจกต์มาด้วย USB drive หรือไฟล์ ZIP
+ซึ่งทำให้สิทธิ์การรันหายไป สคริปต์จะกำหนดสิทธิ์ให้ทุกสคริปต์โดยอัตโนมัติ
+หลังจากนั้นจึงใช้ `./scripts/...` ได้ตามปกติ
 
 สคริปต์นี้จะติดตั้ง MQTT broker และไลบรารี MQTT ของ Python รวมทั้ง build
 micro-ROS agent จาก source เนื่องจากไม่มี package สำเร็จรูปให้ใช้งาน
@@ -79,7 +85,7 @@ sudo usermod -aG dialout $USER
 (ตรวจสอบเวอร์ชันที่ติดตั้งได้ด้วยคำสั่ง `ls /opt/ros`):
 
 ```ini
-board_microros_distro = humble   ; jazzy on 24.04, humble on 22.04
+board_microros_distro = jazzy    ; jazzy on 24.04, humble on 22.04
 ```
 
 หากแก้ไขค่านี้ ให้ลบโฟลเดอร์ `firmware/.pio` ด้วย เพื่อป้องกันการนำผลการ build เดิมมาใช้ซ้ำ

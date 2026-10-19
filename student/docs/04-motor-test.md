@@ -84,7 +84,7 @@ driver ให้สลับสายสองคู่ดังกล่าว
 [motor.h](../firmware/include/motor.h) ไม่ตรงกับการต่อสายจริง
 ให้เทียบทีละขากับตารางใน
 [03-hardware.md](03-hardware.md) จากนั้นตรวจสอบสายสามเส้นของล้อข้างนั้น
-ที่ driver และ jumper ENA/ENB บน L298N
+ที่ driver และตรวจสอบว่า ENA/ENB เป็น HIGH (มี jumper หรือต่อกับ GPIO 14/32)
 
 ## การวัดขนาดหุ่นยนต์
 

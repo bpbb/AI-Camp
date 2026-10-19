@@ -17,15 +17,19 @@
 // motors are mounted. If one wheel runs backwards, swap just its pair.
 #define L_IN1 26   // IN2
 #define L_IN2 27   // IN1
-#define L_PWM 14   // ENA
+#define L_EN  14   // ENA: held HIGH (a jumper on ENA works too)
 #define R_IN1 33   // IN4
 #define R_IN2 25   // IN3
-#define R_PWM 32   // ENB
+#define R_EN  32   // ENB: held HIGH (a jumper on ENB works too)
 
 #define PWM_FREQ 20000   // 20 kHz: above hearing, so the motors don't whine
 #define PWM_RES  8       // 8-bit resolution -> duty is 0..255
-#define L_CH 0
-#define R_CH 1
+// Speed is PWM on the IN pins, because ENA/ENB are tied HIGH on this
+// robot. One PWM channel per IN pin.
+#define L_CH1 0
+#define L_CH2 1
+#define R_CH1 2
+#define R_CH2 3
 
 // ---- Robot shape and limits ----
 #define WHEEL_BASE 0.15f  // metres between the two wheels. MEASURE YOURS.
@@ -47,17 +51,16 @@
 #endif
 
 inline void motorSetup() {
-  pinMode(L_IN1, OUTPUT); pinMode(L_IN2, OUTPUT);
-  pinMode(R_IN1, OUTPUT); pinMode(R_IN2, OUTPUT);
-  PWM_SETUP(L_PWM, L_CH);
-  PWM_SETUP(R_PWM, R_CH);
+  // ENA/ENB HIGH: full enable. Harmless if they are jumpered instead.
+  pinMode(L_EN, OUTPUT); digitalWrite(L_EN, HIGH);
+  pinMode(R_EN, OUTPUT); digitalWrite(R_EN, HIGH);
+  PWM_SETUP(L_IN1, L_CH1); PWM_SETUP(L_IN2, L_CH2);
+  PWM_SETUP(R_IN1, R_CH1); PWM_SETUP(R_IN2, R_CH2);
 }
 
 // Drive one motor. speed is -1.0 (full reverse) .. +1.0 (full forward).
-inline void setMotor(int in1, int in2, int pwmPin, int ch, float speed) {
+inline void setMotor(int in1, int ch1, int in2, int ch2, float speed) {
   bool forward = speed >= 0;
-  digitalWrite(in1, forward ? HIGH : LOW);
-  digitalWrite(in2, forward ? LOW : HIGH);
 
   float mag = fabsf(speed);
   int duty;
@@ -73,7 +76,10 @@ inline void setMotor(int in1, int in2, int pwmPin, int ch, float speed) {
   }
 
   if (duty > 255) duty = 255;
-  PWM_WRITE(pwmPin, ch, duty);
+  // Forward: PWM on in1, in2 LOW. Backward: the other way round.
+  // Both 0 = stop. ENA/ENB stay HIGH, so the IN pins set speed and direction.
+  PWM_WRITE(in1, ch1, forward ? duty : 0);
+  PWM_WRITE(in2, ch2, forward ? 0 : duty);
 }
 
 // ============================================================
@@ -99,8 +105,8 @@ inline void drive(float lin, float ang) {
     right = right / biggest * MAX_LIN;
   }
 
-  setMotor(L_IN1, L_IN2, L_PWM, L_CH, left  / MAX_LIN);
-  setMotor(R_IN1, R_IN2, R_PWM, R_CH, right / MAX_LIN);
+  setMotor(L_IN1, L_CH1, L_IN2, L_CH2, left  / MAX_LIN);
+  setMotor(R_IN1, R_CH1, R_IN2, R_CH2, right / MAX_LIN);
 }
 
 inline void stopMotors() { drive(0.0f, 0.0f); }

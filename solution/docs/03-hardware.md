@@ -14,12 +14,12 @@ power to the motors on the other.
 
 | Motor driver | ESP32 | What it does |
 |---|---|---|
-| IN1 | GPIO 27 | left motor (A) direction |
-| IN2 | GPIO 26 | left motor (A) direction |
-| ENA | GPIO 14 | left motor (A) speed (PWM) |
-| IN3 | GPIO 25 | right motor (B) direction |
-| IN4 | GPIO 33 | right motor (B) direction |
-| ENB | GPIO 32 | right motor (B) speed (PWM) |
+| IN1 | GPIO 27 | left motor (A) direction and speed (PWM) |
+| IN2 | GPIO 26 | left motor (A) direction and speed (PWM) |
+| ENA | GPIO 14, or the jumper | left motor (A) enable, always HIGH |
+| IN3 | GPIO 25 | right motor (B) direction and speed (PWM) |
+| IN4 | GPIO 33 | right motor (B) direction and speed (PWM) |
+| ENB | GPIO 32, or the jumper | right motor (B) enable, always HIGH |
 | GND | GND | **required** -- see below |
 
 This table must match the pin numbers at the top of
@@ -27,8 +27,10 @@ This table must match the pin numbers at the top of
 `motor.h` to match -- otherwise a wheel will sit still with no error at
 all, because the code is driving pins nothing is connected to.
 
-On an **L298N**, take the jumpers off ENA and ENB, or the ESP32 can't
-control the speed.
+ENA and ENB are held HIGH, and the speed comes from PWM on the IN pins.
+On an **L298N** you can leave the ENA/ENB jumpers on and skip those two
+wires; wiring them to GPIO 14 and 32 works too, since the code drives
+those pins HIGH.
 
 Battery `+` to the driver's `12V`/`VIN`, battery `-` to the driver's `GND`.
 
