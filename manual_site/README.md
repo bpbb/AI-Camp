@@ -1,6 +1,6 @@
 # manual_site — เว็บคู่มือนักเรียน
 
-เว็บ: https://ai-camp-jet.vercel.app
+เว็บ: https://ai-camp-chi.vercel.app
 
 โฟลเดอร์นี้มีทุกอย่างของเว็บคู่มือในตัว ไม่ได้อ่านไฟล์จากโฟลเดอร์อื่นใน repo
 
