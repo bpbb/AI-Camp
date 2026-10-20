@@ -128,8 +128,13 @@ if systemctl is-active --quiet mosquitto; then
         note "re-run scripts/setup_pc.sh"
     fi
 else
-    bad "mosquitto not running"
-    note "sudo systemctl start mosquitto"
+    if command -v mosquitto_sub >/dev/null; then
+        bad "mosquitto not running"
+        note "sudo systemctl start mosquitto"
+    else
+        bad "mosquitto not installed"
+        note "sudo apt install mosquitto mosquitto-clients  (or re-run ./scripts/setup_pc.sh)"
+    fi
 fi
 
 # ---- micro-ROS agent ----

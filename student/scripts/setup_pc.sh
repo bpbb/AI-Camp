@@ -71,7 +71,7 @@ sudo apt-get install -y \
     git cmake python3-pip python3-venv python3-rosdep \
     mosquitto mosquitto-clients \
     python3-paho-mqtt \
-    xterm
+    xterm terminator
 
 # ต้องมี python3-venv: PlatformIO extension ของ VS Code สร้าง venv ตอนรันครั้งแรก
 # ถ้าไม่มีจะแจ้ง "Can not find working Python 3.6+ Interpreter" ซึ่งชวนเข้าใจผิด
@@ -87,6 +87,21 @@ allow_anonymous true
 CONF
 sudo systemctl restart mosquitto
 sudo systemctl enable mosquitto
+
+# ---------------------------------------------------------------
+#  VS Code
+# ---------------------------------------------------------------
+echo "==> VS Code and its extensions"
+# snap เป็นแพ็กเกจทางการของ Microsoft และอัปเดตตัวเองได้
+if ! command -v code >/dev/null; then
+    sudo snap install code --classic
+fi
+export PATH="/snap/bin:${PATH}"
+# extension สามตัวเดียวกับใน .vscode/extensions.json (ถ้าไม่มีเน็ตก็ข้ามได้)
+for ext in platformio.platformio-ide ms-iot.vscode-ros ms-python.python; do
+    code --install-extension "${ext}" >/dev/null 2>&1 \
+        || echo "    WARNING: could not install ${ext}; VS Code will offer it later"
+done
 
 # ---------------------------------------------------------------
 #  PlatformIO

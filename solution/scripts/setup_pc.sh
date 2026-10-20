@@ -75,7 +75,7 @@ sudo apt-get install -y \
     git cmake python3-pip python3-venv python3-rosdep \
     mosquitto mosquitto-clients \
     python3-paho-mqtt \
-    xterm
+    xterm terminator
 
 # python3-venv is easy to miss and the failure is misleading. The
 # PlatformIO VS Code extension builds itself a virtualenv on first run;
@@ -94,6 +94,21 @@ allow_anonymous true
 CONF
 sudo systemctl restart mosquitto
 sudo systemctl enable mosquitto
+
+# ---------------------------------------------------------------
+#  VS Code
+# ---------------------------------------------------------------
+echo "==> VS Code and its extensions"
+# The snap is Microsoft's own package and updates itself.
+if ! command -v code >/dev/null; then
+    sudo snap install code --classic
+fi
+export PATH="/snap/bin:${PATH}"
+# The same three .vscode/extensions.json recommends. Not fatal if offline.
+for ext in platformio.platformio-ide ms-iot.vscode-ros ms-python.python; do
+    code --install-extension "${ext}" >/dev/null 2>&1 \
+        || echo "    WARNING: could not install ${ext}; VS Code will offer it later"
+done
 
 # ---------------------------------------------------------------
 #  PlatformIO
