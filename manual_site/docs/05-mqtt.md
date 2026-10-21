@@ -87,12 +87,24 @@ mosquitto_sub -t 'test/#' -v
 gateway รับข้อความ MQTT แล้วส่งต่อเป็น Twist ไปที่ `/cmd_vel`
 
 ```text
-  ┌──────────┐        ┌──────────────┐   /cmd_vel   ┌─────────────┐
-  │ anything │ ─MQTT─>│ mqtt_teleop  │ ───────────> │ esp32_robot │
-  │ that can │        │  (gateway)   │              │ (unchanged) │
-  │ publish  │        └──────────────┘              └─────────────┘
-  └──────────┘
+ MQTT
+┌───────────────────────┐     ┌────────────────────┐     ┌────────────────┐
+│ MQTT client           │     │ MQTT topic         │     │ node (gateway) │
+│ phone / mosquitto_pub │────>│ robot/robot<N>/cmd │────>│ /mqtt_teleop   │
+└───────────────────────┘     └────────────────────┘     └────────┬───────┘
+       ┌──────────────────────────────────────────────────────────┘
+ ROS 2 ▼                                    ┌──> motors
+┌────────────┐     ┌────────────────────┐   │ ┌────────────┐
+│ topic      │     │ node               │───┘ │ topic      │
+│ /cmd_vel   │────>│ /esp32_robot       │────>│ /heartbeat │
+└────────────┘     └────────────────────┘     └────────────┘
+
+──>  = direction of data
 ```
+
+- แถวบน (**MQTT**): มือถือหรือ `mosquitto_pub` ส่งข้อความไปที่ MQTT topic `robot/robot<N>/cmd`
+  (`<N>` คือเลขเครื่อง) ผ่าน broker บนคอมพิวเตอร์ แล้ว **/mqtt_teleop** (gateway) รับข้อความนั้น
+- แถวล่าง (**ROS 2**): gateway publish เป็น Twist ไปที่ `/cmd_vel` ส่วนที่เหลือเหมือนบทที่ 4 ทุกอย่าง
 
 **ไม่ต้อง upload firmware ใหม่** หุ่นยังใช้ firmware จากบทที่ 4
 หุ่นรู้แค่ว่ามีคำสั่งเข้ามาที่ `/cmd_vel` ไม่สนว่าใครส่งมา
