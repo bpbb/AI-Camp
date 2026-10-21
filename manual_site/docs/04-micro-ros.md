@@ -54,15 +54,31 @@ Twist มีทั้งหมด 6 ค่า แต่หุ่นสองล�
 
 ## ตั้งค่าหุ่นของเครื่องเรา (`config.h`)
 
-เปิดไฟล์ [firmware/include/config.h](../firmware/include/config.h) แล้วแก้ 5 ค่านี้:
+เปิดไฟล์ [firmware/include/config.h](../firmware/include/config.h) แล้วแก้ค่าเหล่านี้:
 
 ```c
 #define WIFI_SSID      "..."       // ชื่อ WiFi
 #define WIFI_PASSWORD  "..."
 #define ROBOT_ID       "robot<เลขเครื่อง>"   // เช่น เครื่องที่ 7 ใส่ "robot7"
-#define AGENT_IP       "..."       // IP ของคอมพิวเตอร์
+#define AGENT_IP       "..."       // IP ของคอมพิวเตอร์ (192.168.1.x)
+#define ESP_STATIC_IP  "..."       // IP ของ ESP32 = เลขท้ายของ AGENT_IP + 100
+#define ESP_GATEWAY    "192.168.1.1"
+#define ESP_SUBNET     "255.255.255.0"
 #define ROS_DOMAIN_ID  <เลขเครื่อง>        // เช่น 7 ต้องตรงกับ echo $ROS_DOMAIN_ID
 ```
+
+### IP ของ ESP32 (`ESP_STATIC_IP`)
+
+ESP32 ใช้ IP คงที่เสมอ โดยใช้กฎ **เลขท้ายของคอมพิวเตอร์ + 100**
+เพื่อให้ IP ของหุ่นทุกตัวไม่ซ้ำกัน และไม่สลับไปมาระหว่างเครือข่าย
+
+| `AGENT_IP` (คอมพิวเตอร์) | `ESP_STATIC_IP` (ESP32) |
+|---|---|
+| `192.168.1.17` | `192.168.1.117` |
+| `192.168.1.42` | `192.168.1.142` |
+
+(ตัวอย่าง IP ของแต่ละเครื่องจะต่างกัน) ทั้งสองค่าต้องขึ้นต้นด้วย `192.168.1.` เหมือนกัน
+ถ้าไม่ตรงกัน Serial Monitor จะแสดง `WARNING ... are on different networks`
 
 ### หา IP ของคอมพิวเตอร์ (ใส่ใน `AGENT_IP`)
 
@@ -73,10 +89,11 @@ hostname -I
 ผลลัพธ์ที่ควรเห็น (ตัวอย่าง IP ของแต่ละเครื่องจะต่างกัน):
 
 ```text
-192.168.1.55 172.17.0.1
+10.205.111.29 192.168.1.55 172.17.0.1
 ```
 
-ใช้ตัว **แรก** (ในตัวอย่างคือ `192.168.1.55`) อย่าใช้ตัวที่ขึ้นต้นด้วย `172.17`
+ใช้ตัวที่ขึ้นต้นด้วย **`192.168.1.`** (ในตัวอย่างคือ `192.168.1.55`)
+ไม่ใช้ตัวที่ขึ้นต้นด้วย `10.` (เครือข่ายอาคาร) หรือ `172.17` (Docker)
 
 ### เช็กว่าเลขเครื่องตรงกัน
 
@@ -104,35 +121,31 @@ grep "define ROS_DOMAIN_ID" firmware/include/config.h
 cd ~/AI-Camp/ros2_ws && colcon build && source install/setup.bash
 ```
 
-## โค้ดที่ต้องเขียน: TODO 2-4
+## โค้ดที่ต้องเขียน: TODO 2/2
 
-ในโค้ดมี comment `TODO(student)` ระบุตำแหน่งและสิ่งที่ต้องเขียน ทั้งหมด 3 จุด:
+1. เปิดไฟล์ [ros2_ws/src/teleop/teleop/key_teleop.py](../ros2_ws/src/teleop/teleop/key_teleop.py)
+2. หาคำว่า `TODO(student) 2/2` ในฟังก์ชัน `tick()`
+3. ใส่ความเร็วลงใน Twist: `self.lin` ไปที่ `msg.linear.x` และ `self.ang` ไปที่ `msg.angular.z`
 
-| TODO | ไฟล์ | ต้องทำอะไร |
+แก้แล้วต้อง **`colcon build` ใหม่** (ดูหัวข้อถัดไป)
+ถ้ายังไม่ได้เขียนส่วนนี้ กดปุ่มแล้วหุ่นจะไม่ขยับ และ `ros2 topic echo /cmd_vel` จะเห็นค่าเป็นศูนย์ตลอด
+
+โค้ดส่วนอื่นที่ทำงานในบทนี้เขียนไว้ครบแล้ว:
+
+| ไฟล์ | ฟังก์ชัน | ทำอะไร |
 |---|---|---|
-| 2/4 | [firmware/src/microros/main.cpp](../firmware/src/microros/main.cpp) ฟังก์ชัน `onCmdVel()` | ให้หุ่นขยับตาม Twist ที่ได้รับ |
-| 3/4 | [ros2_ws/src/teleop/teleop/key_teleop.py](../ros2_ws/src/teleop/teleop/key_teleop.py) ฟังก์ชัน `tick()` | ใส่ความเร็วลงใน Twist ก่อนส่ง |
-| 4/4 | ไฟล์เดียวกับ 3/4 ฟังก์ชัน `handle_key()` | ให้ปุ่ม w/s/a/d เปลี่ยนความเร็ว |
-
-อ่าน comment ในโค้ดให้ละเอียด มีคำอธิบายและตัวอย่างอยู่ในนั้น
-
-แก้แล้วต้องทำอะไรต่อ:
-
-- **TODO 2** อยู่ใน firmware (บนหุ่น) → ต้อง **upload ใหม่**
-- **TODO 3 และ 4** อยู่บนคอมพิวเตอร์ → ต้อง **`colcon build` ใหม่**
-
-ถ้าหุ่นเชื่อมต่อได้แต่ไม่ขยับ แปลว่ายังมี TODO ที่ทำไม่เสร็จ
-ใช้ `ros2 topic echo /cmd_vel` ช่วยหา: ถ้าค่าเป็นศูนย์ตลอดตอนกดปุ่ม ปัญหาอยู่ฝั่งคอมพิวเตอร์ (TODO 3 หรือ 4)
+| [firmware/src/microros/main.cpp](../firmware/src/microros/main.cpp) | `onCmdVel()` | รับ Twist แล้วสั่ง `drive()` ให้หุ่นขยับ |
+| [key_teleop.py](../ros2_ws/src/teleop/teleop/key_teleop.py) | `handle_key()` | ให้ปุ่ม w/s/a/d เปลี่ยนความเร็ว |
 
 ## Build และ upload
 
-**ฝั่งคอมพิวเตอร์** (หลังแก้ TODO 3 และ 4):
+**ฝั่งคอมพิวเตอร์** (หลังแก้ TODO 2/2):
 
 ```bash
 cd ~/AI-Camp/ros2_ws && colcon build && source install/setup.bash
 ```
 
-**ฝั่งหุ่น** (หลังแก้ TODO 2 และ `config.h`):
+**ฝั่งหุ่น** (หลังแก้ `config.h`):
 
 ```bash
 cd ~/AI-Camp

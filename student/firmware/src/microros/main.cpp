@@ -47,12 +47,9 @@ void onCmdVel(const void *msgin) {
   const geometry_msgs__msg__Twist *m = (const geometry_msgs__msg__Twist *)msgin;
 
   // Twist บอกการเคลื่อนที่ 3 มิติ แต่หุ่นล้อใช้แค่ 2 ค่า: วิ่งตามแกน x และหมุนรอบแกน z
-  // TODO(student) 2/4 -- บทที่ 5: ให้หุ่นทำตาม Twist
-  //   ความเร็วเดินหน้าคือ m->linear.x ความเร็วเลี้ยวคือ m->angular.z
-  //   1. ส่งค่าทั้งสองให้ drive() (ดู motor.h)
-  //   2. ตั้ง lastCommand = millis(); ให้ safety timeout ใน loop() รู้ว่ามีคำสั่งเข้ามา
-  //      ถ้าลืม หุ่นจะหยุดหลังทุกคำสั่งครึ่งวินาที
-  (void)m;   // ลบบรรทัดนี้เมื่อใช้ m แล้ว
+  drive(m->linear.x, m->angular.z);
+  // บันทึกเวลาที่ได้รับคำสั่งล่าสุด ให้ safety timeout ใน loop() ใช้ตรวจ
+  lastCommand = millis();
 }
 
 // ROS 2 timer เรียกทุก 1 วินาที เพื่อ publish ตัวนับ
@@ -144,6 +141,19 @@ void setup() {
 
   IPAddress agent;
   agent.fromString(AGENT_IP);
+
+  // ใช้ IP คงที่จาก config.h เสมอ ไม่รับ IP จากเครือข่ายที่ตอบก่อน
+  IPAddress ip, gw, mask;
+  ip.fromString(ESP_STATIC_IP);
+  gw.fromString(ESP_GATEWAY);
+  mask.fromString(ESP_SUBNET);
+  WiFi.config(ip, gw, mask);
+  Serial.printf("wifi: fixed IP %s\n", ESP_STATIC_IP);
+  // ESP32 กับ agent ต้องอยู่วงเดียวกัน ไม่เช่นนั้นจะติดต่อ agent ไม่ได้
+  if ((uint32_t(ip) & uint32_t(mask)) != (uint32_t(agent) & uint32_t(mask))) {
+    Serial.printf("wifi: WARNING ESP_STATIC_IP %s and AGENT_IP %s are on different networks\n",
+                  ESP_STATIC_IP, AGENT_IP);
+  }
   set_microros_wifi_transports(WIFI_SSID, WIFI_PASSWORD, agent, AGENT_PORT);
 
   Serial.printf("wifi: ok, my IP is %s\n", WiFi.localIP().toString().c_str());

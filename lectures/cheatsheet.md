@@ -100,11 +100,11 @@ ros2 topic pub --once /chatter std_msgs/msg/String '{data: "hello"}'
 
 ## Assignment Build and Upload
 
-| ส่วนที่แก้ | การนำโค้ดไปใช้ |
+| ไฟล์ที่แก้ | การนำโค้ดไปใช้ |
 |---|---|
-| TODO 1/4: `motor.h` | Upload `motortest` เพื่อตรวจล้อ |
-| TODO 2/4: `onCmdVel()` | Upload `microros` หลังเติม TODO 1/4 และ 2/4 |
-| TODO 3/4–4/4: `key_teleop.py` | `colcon build` แล้วเปิด Node ใหม่ |
+| TODO 1/2: `motor.h` | Upload `motortest` เพื่อตรวจล้อ |
+| `config.h` | Upload `microros` |
+| TODO 2/2: `key_teleop.py` | `colcon build` แล้วเปิด Node ใหม่ |
 
 ```bash
 cd "$CAMP_DIR"

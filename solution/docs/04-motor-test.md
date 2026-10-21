@@ -10,15 +10,15 @@ there are five things in the chain instead of one.
 > **Put the robot on a book** so the wheels spin in the air. It will
 > drive off the table otherwise.
 
-## Your code: TODO 1/4
+## The code: `drive()`
 
-Open [motor.h](../firmware/include/motor.h) and find
-`TODO(student) 1/4` inside `drive()`. Replace the two `0.0f` lines with
-the formula for each wheel. The comment gives the idea and two examples
-to check your answer against.
+The conversion from (lin, ang) to two wheel speeds is in `drive()` in
+[motor.h](../firmware/include/motor.h). It is complete:
 
-Until you do, the test runs and prints every step, but the wheels never
-move. That's how you know it's your turn.
+```c
+float left  = lin - ang * WHEEL_BASE / 2.0f;
+float right = lin + ang * WHEEL_BASE / 2.0f;
+```
 
 ## Upload it
 

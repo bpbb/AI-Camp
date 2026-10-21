@@ -168,16 +168,24 @@ fi
 
 # ---- the bit that changes on its own ----
 echo
-ip=$(hostname -I | awk '{print $1}')
-echo "this machine's address: ${ip:-none}"
+ips=$(hostname -I)
+echo "this machine's addresses: ${ips:-none}"
 CFG="$(dirname "$0")/../firmware/include/config.h"
 if [ -f "${CFG}" ]; then
     cfg=$(grep -oP 'define\s+AGENT_IP\s+"\K[^"]+' "${CFG}" 2>/dev/null)
-    if [ "$cfg" = "$ip" ]; then
+    esp=$(grep -oP 'define\s+ESP_STATIC_IP\s+"\K[^"]+' "${CFG}" 2>/dev/null)
+    # Any of this PC's addresses will do: it may have a building one too.
+    if [[ " ${ips} " == *" ${cfg} "* ]]; then
         ok "config.h AGENT_IP matches (${cfg})"
     else
-        bad "config.h says ${cfg}, this machine is ${ip}"
+        bad "config.h AGENT_IP ${cfg} is not one of this machine's addresses"
         note "edit firmware/include/config.h"
+    fi
+    if [ -n "${esp}" ] && [ "${esp%.*}" = "${cfg%.*}" ] && [ "${esp}" != "${cfg}" ]; then
+        ok "ESP_STATIC_IP ${esp} is on the same network"
+    elif [ -n "${esp}" ]; then
+        bad "ESP_STATIC_IP ${esp} must be on ${cfg%.*}.x and differ from AGENT_IP"
+        note "rule: AGENT_IP's last number + 100"
     fi
 fi
 

@@ -61,7 +61,7 @@ class KeyTeleop(Node):
 
     def tick(self):
         msg = Twist()
-        # TODO(student) 3/4 -- บทที่ 5: ใส่ความเร็วลงใน message
+        # TODO(student) 2/2 -- บทที่ 4: ใส่ความเร็วลงใน message
         #   self.lin ใส่ใน msg.linear.x และ self.ang ใส่ใน msg.angular.z
         #   ถ้าไม่ใส่ หุ่นยนต์จะได้รับค่าศูนย์ทั้งหมดและไม่ขยับ
         self.pub.publish(msg)
@@ -73,12 +73,15 @@ class KeyTeleop(Node):
             self.lin = 0.0
             self.ang = 0.0
 
-        # TODO(student) 4/4 -- บทที่ 5: ให้ w/s/a/d เปลี่ยนความเร็ว
-        #   w เดินหน้าเร็วขึ้น, s ช้าลง/ถอยหลัง  -> เปลี่ยน self.lin
-        #   a เลี้ยวซ้าย,      d เลี้ยวขวา       -> เปลี่ยน self.ang
-        #   ใช้ step() ที่ด้านบนของไฟล์ เช่น:
-        #       self.lin = step(self.lin, LINEAR_STEP, LINEAR_MIN, LINEAR_MAX)
-        #   s และ d ไปทางตรงข้าม: ใช้ -LINEAR_STEP และ -ANGULAR_STEP
+        # w/s เปลี่ยนความเร็วเดินหน้า, a/d เปลี่ยนความเร็วเลี้ยว
+        if key == 'w':
+            self.lin = step(self.lin, LINEAR_STEP, LINEAR_MIN, LINEAR_MAX)
+        elif key == 's':
+            self.lin = step(self.lin, -LINEAR_STEP, LINEAR_MIN, LINEAR_MAX)
+        elif key == 'a':
+            self.ang = step(self.ang, ANGULAR_STEP, ANGULAR_MIN, ANGULAR_MAX)
+        elif key == 'd':
+            self.ang = step(self.ang, -ANGULAR_STEP, ANGULAR_MIN, ANGULAR_MAX)
 
         self.get_logger().info(f'lin={self.lin:+.2f}  ang={self.ang:+.2f}')
         return True

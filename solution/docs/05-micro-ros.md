@@ -75,22 +75,16 @@ echo $ROS_DOMAIN_ID      # must print the same number as config.h
 Get this wrong and you will drive someone else's robot -- which is funny
 for about two minutes.
 
-## Your code: TODOs 2-4
+## The code that matters
 
-Three short gaps, each marked with a `TODO(student)` comment that says
-what goes there:
-
-| TODO | File | What it does |
+| File | Function | What it does |
 |---|---|---|
-| 2/4 | [firmware/src/microros/main.cpp](../firmware/src/microros/main.cpp), `onCmdVel()` | the robot obeys each Twist it receives |
-| 3/4 | [ros2_ws/src/teleop/teleop/key_teleop.py](../ros2_ws/src/teleop/teleop/key_teleop.py), `tick()` | your speeds go into the Twist |
-| 4/4 | the same file, `handle_key()` | w/s/a/d change the speeds |
+| [firmware/src/microros/main.cpp](../firmware/src/microros/main.cpp) | `onCmdVel()` | the robot obeys each Twist it receives |
+| [ros2_ws/src/teleop/teleop/key_teleop.py](../ros2_ws/src/teleop/teleop/key_teleop.py) | `tick()` | the speeds go into the Twist |
+| the same file | `handle_key()` | w/s/a/d change the speeds |
 
-TODO 2 is in the firmware, so upload after changing it. TODOs 3 and 4
-are on the computer, so run `colcon build` in `ros2_ws` after changing
-them. If the robot connects but never moves, one of these is still
-empty. `ros2 topic echo /cmd_vel` tells you which side: all zeros means
-the computer side (3 or 4).
+Changes to the firmware need an upload; changes to `key_teleop.py` need
+`colcon build`.
 
 ## Upload
 

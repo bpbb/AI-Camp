@@ -13,11 +13,11 @@
 // ถ้า motor driver ดึงขาไว้ บอร์ดอาจ boot ไม่ขึ้น
 // สลับ IN1/IN2 และ IN3/IN4 ไว้ให้ "เดินหน้า" ตรงกับการติดตั้งมอเตอร์
 // ถ้าล้อใดหมุนกลับทิศ ให้สลับเฉพาะคู่ของล้อนั้น
-#define L_IN1 26   // IN2
-#define L_IN2 27   // IN1
+#define L_IN1 2    // IN1
+#define L_IN2 4    // IN2
 #define L_EN  14   // ENA: ตั้งเป็น HIGH ค้างไว้ (ใช้ jumper บน ENA แทนก็ได้)
-#define R_IN1 33   // IN4
-#define R_IN2 25   // IN3
+#define R_IN1 16   // IN3
+#define R_IN2 17   // IN4
 #define R_EN  32   // ENB: ตั้งเป็น HIGH ค้างไว้ (ใช้ jumper บน ENB แทนก็ได้)
 
 #define PWM_FREQ 20000   // 20 kHz: สูงเกินหูได้ยิน มอเตอร์จึงไม่มีเสียงหวีด
@@ -30,7 +30,7 @@
 #define R_CH2 3
 
 // ---- ขนาดหุ่นและขีดจำกัด ----
-#define WHEEL_BASE 0.15f  // ระยะห่างระหว่างสองล้อ (เมตร) วัดของหุ่นตัวเอง
+#define WHEEL_BASE 0.126f  // ระยะห่างระหว่างสองล้อ (เมตร) วัดของหุ่นตัวเอง
 #define MAX_LIN    0.30f  // m/s ที่ความเร็วสูงสุด ค่าประมาณก็พอ
 #define MIN_DUTY   60     // ต่ำกว่านี้มอเตอร์มีเสียงแต่ไม่หมุน
                           // ปรับค่านี้: ลดลงจนคำสั่งเบา ๆ ยังขยับหุ่นได้
@@ -87,7 +87,7 @@ inline void setMotor(int in1, int ch1, int in2, int ch2, float speed) {
 //  (motor test, micro-ROS, MQTT) จึงเรียกใช้ฟังก์ชันนี้
 // ============================================================
 inline void drive(float lin, float ang) {
-  // TODO(student) 1/4 -- บทที่ 4: แปลง (lin, ang) เป็นความเร็วสองล้อ
+  // TODO(student) 1/2 -- บทที่ 3: แปลง (lin, ang) เป็นความเร็วสองล้อ
   //   เดินตรง: ทั้งสองล้อใช้ความเร็ว lin
   //   เลี้ยวซ้าย (ang > 0): ล้อขวาเร็วขึ้นและล้อซ้ายช้าลง
   //   ล้อละ ang * WHEEL_BASE / 2

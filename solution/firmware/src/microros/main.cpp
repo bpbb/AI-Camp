@@ -148,6 +148,20 @@ void setup() {
 
   IPAddress agent;
   agent.fromString(AGENT_IP);
+
+  // Always a fixed address (config.h), so the ESP32 never takes an
+  // address from whichever network answers first.
+  IPAddress ip, gw, mask;
+  ip.fromString(ESP_STATIC_IP);
+  gw.fromString(ESP_GATEWAY);
+  mask.fromString(ESP_SUBNET);
+  WiFi.config(ip, gw, mask);
+  Serial.printf("wifi: fixed IP %s\n", ESP_STATIC_IP);
+  // Both must be on one network, or the agent can never be reached.
+  if ((uint32_t(ip) & uint32_t(mask)) != (uint32_t(agent) & uint32_t(mask))) {
+    Serial.printf("wifi: WARNING ESP_STATIC_IP %s and AGENT_IP %s are on different networks\n",
+                  ESP_STATIC_IP, AGENT_IP);
+  }
   set_microros_wifi_transports(WIFI_SSID, WIFI_PASSWORD, agent, AGENT_PORT);
 
   Serial.printf("wifi: ok, my IP is %s\n", WiFi.localIP().toString().c_str());
